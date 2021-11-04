@@ -3,4 +3,4 @@ Early dev/noodling repo for working with data from BARD, esp. Spring Run Chinook
 
 Currently has no 'Data' directory, as initial file sizes were too large for basic Github.
 
-Note to self: need to re-pull the first steelhead file due to mismanagement issues w/ Git.
+Current stage of work: adapt working C++ LCS & constructor tool to work with Rcpp i/o.
