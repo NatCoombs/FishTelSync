@@ -455,9 +455,30 @@ points(x = FWSSteelFall[which(FWSSteelFall$Fish == f2), "ChronTimes"],
        y = FWSSteelFall[which(FWSSteelFall$Fish == f2), "Rkm"], col = "Blue")
 abline(h = PerfectSites,col = gray(level = 0, alpha = .2))
 
+# Time to try working with DetReducer
+PlotSet<-Pairs07[FWS07SetDex,]
+RkmList<-unique(na.omit(RkmTable$RiverKm))
+PlotDispLCSSet<-list()
+FWS07_200Dense$FirstDet<-as.chron(FWS07_200Dense$FirstDet)
+FWS07_200Dense$LastDet<-as.chron(FWS07_200Dense$LastDet)
+for(i in 1:length(PlotSet)){
+  PlotDispLCSSet[[i]]<-DetReducer(DenseFrame = FWS07_200Dense, FishSet = PlotSet[i,], fCol = "FishID", 
+                                  t1Col = "FirstDet", t2Col = "LastDet",SiteCol = "Loc")
+  
+}
+
+PlotDispLCSSet[[1]]<-DetReducer(DenseFrame = FWS07_200Dense, FishSet = PlotSet[1,], fCol = "FishID", 
+           t1Col = "FirstDet", t2Col = "LastDet",SiteCol = "Loc")
+
+
+LCSDemo1<-DetReducer(DenseFrame = FWS07_200Dense, FishSet = c("STH0452","STH0461"), fCol = "FishID", 
+                     t1Col = "FirstDet", t2Col = "LastDet",SiteCol = "Loc")
 
 
 
+pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Results/DISPSingleRelease07Set.pdf",paper = "USr")
+
+dev.off()
 
 
 

@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+Code/ClusterPractice.sh
+.RDataTmp
+Code/Functions/LCSTestXCode/LCSTestXCode.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+Code/Functions/LCSTestXCode/LCSTestXCode.xcodeproj/xcshareddata/xcschemes/LCSTestXCode.xcscheme
+Code/Functions/LCSTestXCode/LCSTestXCode.xcodeproj/xcuserdata/nathanielcoombs.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
