@@ -211,9 +211,9 @@ Printdex <- 1
 
 # Now 84 is giving me trouble.
 for(i in 1:length(FWS07Pairs[,1])){
-  print("The fish pair:")
-  print(c(FWS07Pairs[i,1],FWS07Pairs[i,2]))
-  print("The LCS info:")
+  cat("The fish pair: ", FWS07Pairs[i,1]," ", FWS07Pairs[i,2], "\n")
+
+  cat("The LCS info: \n")
   ReducedFWS07[[i]]<-LCSExtract(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[i,1]),"Loc"],
                                 FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[i,2]),"Loc"],
                                       as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[i,1]),"FirstDet"]),
@@ -221,68 +221,112 @@ for(i in 1:length(FWS07Pairs[,1])){
                                       as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[i,2]),"FirstDet"]),
                                       as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[i,2]),"LastDet"]),
                                       c("All"))
-  print("The completed run #:")
-  print(Printdex)
+  cat("The completed run #: ", Printdex, "\n")
   Printdex <- Printdex+1
 }
 
+LCSlens<-numeric(0)
+LDSyn<-numeric(0)
+for(i in 1:253){
+  LCSlens<-c(LCSlens,length(ReducedFWS07[[i]][[2]]))
+  LDSyn<-c(LDSyn, (as.numeric(ReducedFWS07[[i]][[7]])))
+}
 
-FWS07LDMat<-matrix(nrow = 23, ncol = 23)
+
+ FWS07LDMat<-matrix(nrow = 23, ncol = 23)
 rownames(FWS07LDMat) <- FWS07PairChain
 colnames(FWS07LDMat) <- FWS07PairChain
 FWS07LSMat <- FWS07LDMat
+FWS07PSMat <- FWS07LDMat
 for(i in 1:253){
   LDk1 <- match(FWS07Pairs[i,1],FWS07PairChain)
   LDk2 <- match(FWS07Pairs[i,2],FWS07PairChain)
-  LSk1 <- match(FWS07Pairs[i,1],FWS07PairChain)
-  LSk2 <- match(FWS07Pairs[i,2],FWS07PairChain)
-  FWS07LDMat[LDk1,LDk2] <- (1 / log(as.numeric(ReducedFWS07[[i]][[7]])))
-  FWS07LSMat[LSk1,LSk2] <- (1 / log(as.numeric(ReducedFWS07[[i]][[21]])))
-  FWS07LDMat[LDk2,LDk1] <- (1 / log(as.numeric(ReducedFWS07[[i]][[7]])))
-  FWS07LSMat[LSk2,LSk1] <- (1 / log(as.numeric(ReducedFWS07[[i]][[21]])))
+  
+  FWS07LDMat[LDk1,LDk2] <- ( (as.numeric(ReducedFWS07[[i]][[7]])))
+  FWS07PSMat[LDk1,LDk2] <- ( (as.numeric(ReducedFWS07[[i]][[14]])))
+  FWS07LSMat[LDk1,LDk2] <- ( (as.numeric(ReducedFWS07[[i]][[21]])))
+  
+  FWS07LDMat[LDk2,LDk1] <- ( (as.numeric(ReducedFWS07[[i]][[7]])))
+  FWS07PSMat[LDk2,LDk1] <- ( (as.numeric(ReducedFWS07[[i]][[14]])))
+  FWS07LSMat[LDk2,LDk1] <- ( (as.numeric(ReducedFWS07[[i]][[21]])))
 }
 
 TestLDClustOrd <- order.dendrogram(as.dendrogram(hclust(as.dist(FWS07LDMat))))
 
+TestPSClustOrd <- order.dendrogram(as.dendrogram(hclust(as.dist(FWS07PSMat))))
+
 TestLSClustOrd <- order.dendrogram(as.dendrogram(hclust(as.dist(FWS07LSMat))))
 
 
-FWS07LDMatOrdered<-matrix(nrow = 23, ncol = 23)
+FWS07LDMatOrdered <- matrix(nrow = 23, ncol = 23)
 rownames(FWS07LDMatOrdered) <- FWS07PairChain[TestLDClustOrd]
 colnames(FWS07LDMatOrdered) <- FWS07PairChain[TestLDClustOrd]
 FWS07LSMatOrdered <- FWS07LDMatOrdered
 rownames(FWS07LSMatOrdered) <- FWS07PairChain[TestLSClustOrd]
 colnames(FWS07LSMatOrdered) <- FWS07PairChain[TestLSClustOrd]
+FWS07PSMatOrdered <- FWS07LDMatOrdered
+rownames(FWS07PSMatOrdered) <- FWS07PairChain[TestPSClustOrd]
+colnames(FWS07PSMatOrdered) <- FWS07PairChain[TestPSClustOrd]
+
+FWS07LDMatOrderedInt <- matrix(nrow = 23, ncol = 23)
+FWS07LSMatOrderedInt <- FWS07LDMatOrderedInt
+FWS07PSMatOrderedInt <- FWS07LDMatOrderedInt
 
 for(i in 1:23){
-  FWS07LDMatOrdered[i,] <- FWS07LDMat[TestLDClustOrd[i],]
-  FWS07LSMatOrdered[i,] <- FWS07LSMat[TestLSClustOrd[i],]
+  FWS07LDMatOrderedInt[i,] <- FWS07LDMat[TestLDClustOrd[i],]
+  FWS07PSMatOrderedInt[i,] <- FWS07PSMat[TestPSClustOrd[i],]
+  FWS07LSMatOrderedInt[i,] <- FWS07LSMat[TestLSClustOrd[i],]
 }
-
+for(i in 1:23){
+  FWS07LDMatOrdered[,i] <- FWS07LDMatOrderedInt[,TestLDClustOrd[i]]
+  FWS07PSMatOrdered[,i] <- FWS07PSMatOrderedInt[,TestPSClustOrd[i]]
+  FWS07LSMatOrdered[,i] <- FWS07LSMatOrderedInt[,TestLSClustOrd[i]]
+}
 image(FWS07LDMatOrdered)
+title(main = "FWS 2007 kelts - least distance")
+image(FWS07PSMatOrdered)
+title(main = "FWS 2007 kelts - phase similarity")
 image(FWS07LSMatOrdered)
+title(main = "FWS 2007 kelts - least step difference")
 
+FWS07MTable<-MarkovFishTableSteel(FWS07LocDense,"FishID", "Loc", "FirstDet","LastDet", "Golden Gate and Ocean")
+
+FWS07Surrs<-MarkovFishSurrogatesSteel(FWS07MTable, InitPos = "Battle_Ck", 
+                                 InitTime = 0, nFish = 1000, Reps = 2, "Golden Gate and Ocean")
+
+Rcpp::sourceCpp("Code/Functions/FullLCSExtractor.cpp")
+
+FWS07SigTest<-MFSig(FWS07Pairs, FWS07LocDense, ReducedFWS07, FWS07Surrs[[1]], FWS07Surrs[[2]], Reps = 1000)
+
+typeof(FWS07Surrs[[1]][,5])
 
 
 FWS07CppDebug<-function(index){
-  cat(paste(shQuote(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,1]),"Loc"], 
-                    type = "cmd"), collapse =", "))
-  print("END FSEQ1")
-  cat(paste(shQuote(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,2]),"Loc"], 
-                    type = "cmd"), collapse =", "))
-  print("END FSEQ2")
-  cat(paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,1]),"FirstDet"]), 
-            collapse =", "))
-  print("END ARRSEQ1")
-  cat(paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,1]),"LastDet"]), 
-            collapse =", "))
-  print("END DEPSEQ1")
-  cat(paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,2]),"FirstDet"]), 
-            collapse =", "))
-  print("END ARRSEQ2")
-  cat(paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,2]),"LastDet"]), 
-            collapse =", "))
-  print("END DEPSEQ2")
+  cat("std::vector<std::string> Fish1Seq_ {", paste(shQuote(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,1]),"Loc"], 
+                    type = "cmd"), collapse =", "), "};\n")
+  #print("END FSEQ1")
+  cat("std::vector<std::string> Fish2Seq_ {", paste(shQuote(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,2]),"Loc"], 
+                    type = "cmd"), collapse =", "), "};\n")
+  #print("END FSEQ2")
+  cat("std::vector<double> TSeqArr1 {", paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,1]),"FirstDet"]), 
+            collapse =", "), "};\n")
+  #print("END ARRSEQ1")
+  cat("std::vector<double> TSeqDep1 {", paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,1]),"LastDet"]), 
+            collapse =", "), "};\n")
+  #print("END DEPSEQ1")
+  cat("std::vector<double> TSeqArr2 {", paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,2]),"FirstDet"]), 
+            collapse =", "), "};\n")
+  #print("END ARRSEQ2")
+  cat("std::vector<double> TSeqDep2 {", paste(as.numeric(FWS07LocDense[which(FWS07LocDense$FishID %in% FWS07Pairs[index,2]),"LastDet"]), 
+            collapse =", "), "};\n")
+  #print("END DEPSEQ2")
 }
 
-FWS07CppDebug(84)
+FWS07CppDebug(1)
+
+
+
+Test<-matrix(data = NA, ncol = 2)
+Test
+Test<-rbind(Test, c(1,2))
+

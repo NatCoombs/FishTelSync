@@ -186,11 +186,21 @@ std::vector<std::string> LCSStringify(std::vector<int> LCSInt, int lcslen, std::
 }
 
 
-void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> & PullSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib, int lcslen){
+void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> & PullSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib, int lcslen, int Size1, int Size2){
     std::vector<std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>>> Candidates(Method.size());
     
     int l = Method.size();
+    
     int BestConsts[l][2];
+    
+    
+    
+    
+    
+    
+    std::vector<std::vector<double>> DistLUT (Size1, std::vector<double> (Size2, NAN));
+    std::vector<std::vector<double>> DiffLUT (Size1, std::vector<double> (Size2, NAN));
+    std::vector<std::vector<std::vector<std::vector<double>>>> StepLUT (Size1, std::vector<std::vector<std::vector<double>>>(Size1, std::vector<std::vector<double>>(Size2,std::vector<double>(Size2, NAN))));
     
     for(int i = 0; i<LCSset.size(); i++){
         std::vector<std::vector<int>> FMT1(lcslen);
@@ -221,6 +231,9 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
         // At this point, our CSets are built, our TSeq's are read in, we are as ready as we can be.
         std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,std::vector<double>> LCSConst;
 
+
+
+        
         // Construct selector will be replaced with a "raw" version that accounts for any included methods.
         // We need to find a way to either evaluate as we go from this table or SOMETHING to make this faster.
         // Put the logic switches in here
@@ -230,7 +243,7 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
         double BestDist = NAN;
         double BestPhase = NAN;
         double BestStep = NAN;
-        
+         
         std::vector<std::vector<std::vector<std::vector<double>>>> BestConst(l);
         std::vector<std::vector<double>> BestC1;
         std::vector<std::vector<double>> BestC2;
@@ -239,32 +252,30 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
        std::vector<std::vector<double>> tVec2;
        // Here is where the split into unknown territory begins
         if(CSet1.size() == 1 && CSet2.size() == 1){
-            std::vector<std::vector<std::vector<double>>> ConstrTable1;
-            std::vector<std::vector<std::vector<double>>> ConstrTable2;
+            std::vector<std::vector<std::vector<double>>> ConstrTable1(1);
+            std::vector<std::vector<std::vector<double>>> ConstrTable2(1);
             
-                 for(int i = 0; i<CSet1.size(); i++){
-                     std::vector<std::vector<double>> TPairVec1;
+                     std::vector<std::vector<double>> TPairVec1(lcslen, std::vector<double>(2, NAN));
                      
                      for(int j = 0; j<CSet1[0].size(); j++){
-                         std::vector<double> TPair1;
-                         TPair1.push_back(TSeqArr1[CSet1[i][j]]);
-                         TPair1.push_back(TSeqDep1[CSet1[i][j]]);
-                         TPairVec1.push_back(TPair1);
+                         std::vector<double> TPair1(2, NAN);
+                         TPair1[0] = (TSeqArr1[CSet1[0][j]]);
+                         TPair1[1] = (TSeqDep1[CSet1[0][j]]);
+                         TPairVec1[j] = (TPair1);
                      }
-                     ConstrTable1.push_back(TPairVec1);
-                 }
+                     ConstrTable1[0] = (TPairVec1);
                  
-                 for(int i = 0; i<CSet2.size(); i++){
-                     std::vector<std::vector<double>> TPairVec2;
+                 
+                    std::vector<std::vector<double>> TPairVec2(lcslen, std::vector<double>(2, NAN));
                      
                      for(int j = 0; j<CSet2[0].size(); j++){
-                         std::vector<double> TPair2;
-                         TPair2.push_back(TSeqArr2[CSet2[i][j]]);
-                         TPair2.push_back(TSeqDep2[CSet2[i][j]]);
-                         TPairVec2.push_back(TPair2);
+                         std::vector<double> TPair2(2, NAN);
+                         TPair2[0] = (TSeqArr2[CSet2[0][j]]);
+                         TPair2[1] = (TSeqDep2[CSet2[0][j]]);
+                         TPairVec2[j] = (TPair2);
                      }
-                     ConstrTable2.push_back(TPairVec2);
-                 }
+                     ConstrTable2[0] = (TPairVec2);
+                 
             for(int k = 0; k < l; k++){
             // Assemble the output and end this
             BestC1.insert(BestC1.end(),ConstrTable1[0].begin(),ConstrTable1[0].end());
@@ -277,41 +288,63 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                     tVec1 = ConstrTable1[i];
                     
                     for(int j = 0; j<ConstrTable2.size(); j++){
-                        std::vector<double> DistVec;
-                        std::vector<double> PhaseVec;
-                        std::vector<double> StepVec;
+                        std::vector<double> DistVec(lcslen, NAN);
+                        std::vector<double> PhaseVec(lcslen, NAN);
+                        std::vector<double> StepVec(lcslen, NAN);
                         tVec2 = ConstrTable2[j];
                         
-                        std::vector<double> DiffVec;
+                        std::vector<double> DiffVec(lcslen, NAN);
                         double DiffMean;
                         for(int k = 0; k<ConstrTable1[0].size(); k++){
-                            DiffVec.push_back((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                            if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
+                            DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
+                            } else {
+                                DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
+                            }
                         }
                         
                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
                         DiffMean = DiffSum / (2 * DiffVec.size());
                         
-                        DistVec.push_back((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                        
-                        PhaseVec.push_back(std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
-                        
-                        StepVec.push_back(0);
-                        
-                        
-                        
-                        for(int k = 1; k<ConstrTable1[0].size(); k++){
-                            DistVec.push_back((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                            
-                            PhaseVec.push_back(std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                            
-                            StepVec.push_back((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                        if(!(DistLUT[CSet1[0][0]][CSet2[0][0]] > 0)){
+                        DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
+                            DistLUT[CSet1[0][0]][CSet2[0][0]] = DistVec[0];
+                        } else{
+                            DistVec[0] = DistLUT[CSet1[0][0]][CSet2[0][0]];
                         }
                         
-                        BestDist = std::accumulate(DistVec.begin(), DistVec.end(), 0);
+                        PhaseVec[0] = (std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
 
-                        BestPhase = std::accumulate(PhaseVec.begin(), PhaseVec.end(), 0);
+                        StepVec[0] = (0);
+                        
+                        
+                        
+                        for(int k = 1; k<lcslen; k++){
+                            
+                            if(!(DistLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
+                            DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                DistLUT[CSet1[0][k]][CSet2[0][k]] = DistVec[k];
+                            } else {
+                                DistVec[k] = DistLUT[CSet1[0][k]][CSet2[0][k]];
+                            }
+                            
+                            PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
+                            
+                            if(!(StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]] > 0)){
+                            StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]] = StepVec[k];
+                            } else {
+                                StepVec[k] = StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]];
+                            }
+                            
+                        }
+                        
+                        BestDist = std::accumulate(DistVec.begin(), DistVec.end(), 0LL);
 
-                        BestStep = std::accumulate(StepVec.begin(), StepVec.end(), 0);
+                        BestPhase = std::accumulate(PhaseVec.begin(), PhaseVec.end(), 0LL);
+
+                        BestStep = std::accumulate(StepVec.begin(), StepVec.end(), 0LL);
 
                     }
                 }
@@ -357,50 +390,71 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                                  
                                  for(int i = 0; i<CSet1.size(); i++){
                                          for(int j = 0; j<CSet2.size(); j++){
+                                             
+                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<std::vector<double>> tVec1;
+                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<std::vector<double>> tVec2;
-
-                                             std::vector<double> DistVec;
-                                             std::vector<double> PhaseVec;
-                                             std::vector<double> StepVec;
-                                                 for(int m = 0; m<CSet1[0].size(); m++){
-                                                     std::vector<double> TPair1;
-                                                     TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                                     TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                                     tVec1.push_back(TPair1);
-                                                     std::vector<double> TPair2;
-                                                     TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                                     TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                                     tVec2.push_back(TPair2);
+                                             std::vector<double> DistVec(lcslen, NAN);
+                                             std::vector<double> PhaseVec(lcslen, NAN);
+                                             std::vector<double> StepVec(lcslen, NAN);
+                                                 for(int m = 0; m<lcslen; m++){
+                                                     std::vector<double> TPair1(2, NAN);
+                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                     tVec1[m] = TPair1;
+                                                     std::vector<double> TPair2(2, NAN);
+                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                     tVec2[m] = TPair2;
                                                  }
                                              
-                                             std::vector<double> DiffVec;
+                                             std::vector<double> DiffVec(lcslen, NAN);
                                              double DiffMean;
-                                             for(int k = 0; k<tVec1.size(); k++){
-                                                 DiffVec.push_back((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                             for(int k = 0; k<lcslen; k++){
+                                                 if(!(DiffLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
+                                                 DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                                     DiffLUT[CSet1[i][k]][CSet2[j][k]] = DiffVec[k];
+                                                 } else {
+                                                     DiffVec[k] = DiffLUT[CSet1[i][k]][CSet2[j][k]];
+                                                 }
                                              }
                                              
                                              double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
                                              DiffMean = DiffSum / (2 * DiffVec.size());
                                              
-                                             DistVec.push_back((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
+                                             if(!(DistLUT[CSet1[i][0]][CSet2[j][0]] > 0)){
+                                             DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
+                                                 DistLUT[CSet1[i][0]][CSet2[j][0]] = DistVec[0];
+                                             } else{
+                                                 DistVec[0] = DistLUT[CSet1[i][0]][CSet2[j][0]];
+                                             }
                                              
-                                             PhaseVec.push_back(std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
+                                             PhaseVec[0] = (std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
                                              
-                                             StepVec.push_back(0);
+                                             StepVec[0] = (0);
                                              
-                                         for(int k = 1; k<tVec1.size(); k++){
-                                             DistVec.push_back((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                         for(int k = 1; k<lcslen; k++){
                                              
-                                             PhaseVec.push_back(std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
+                                             if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
+                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
+                                             } else {
+                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
+                                             }
                                              
-                                             StepVec.push_back((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                             PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
+                                             
+                                             if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
+                                             StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                                 StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
+                                             } else {
+                                                 StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
+                                             }
                                          }
-                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0);
-                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0);
-                                         double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0);
+                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
+                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
+                                         double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
                                          if(!(BestDist < CurrDist)){
                                              BestDist = CurrDist;
                                              BestConsts[0][0] = i;
@@ -428,40 +482,51 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                                  for(int i = 0; i<CSet1.size(); i++){
                                          for(int j = 0; j<CSet2.size(); j++){
 
-                                         std::vector<std::vector<double>> tVec1;
+                                             std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<std::vector<double>> tVec2;
+                                             std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-                                             std::vector<double> DistVec;
-                                             std::vector<double> PhaseVec;
-                                                 for(int m = 0; m<CSet1[0].size(); m++){
-                                                     std::vector<double> TPair1;
-                                                     TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                                     TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                                     tVec1.push_back(TPair1);
-                                                     std::vector<double> TPair2;
-                                                     TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                                     TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                                     tVec2.push_back(TPair2);
-                                                 }
-                                             
-                                             std::vector<double> DiffVec;
+                                                 std::vector<double> DistVec(lcslen, NAN);
+                                                 std::vector<double> PhaseVec(lcslen, NAN);
+
+                                                     for(int m = 0; m<lcslen; m++){
+                                                         std::vector<double> TPair1(2, NAN);
+                                                         TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                         TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                         tVec1[m] = TPair1;
+                                                         std::vector<double> TPair2(2, NAN);
+                                                         TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                         TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                         tVec2[m] = TPair2;
+                                                     }
+                                                 
+                                                 std::vector<double> DiffVec(lcslen, NAN);
                                              double DiffMean;
-                                             for(int k = 0; k<tVec1.size(); k++){
-                                                 DiffVec.push_back((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                             for(int k = 0; k<lcslen; k++){
+                                                    if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
+                                                        DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                                        DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
+                                                    } else {
+                                                        DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
+                                                    }
                                              }
                                              
                                              double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
                                              DiffMean = DiffSum / (2 * DiffVec.size());
                                              
                                              
-                                         for(int k = 0; k<tVec1.size(); k++){
-                                             DistVec.push_back((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                         for(int k = 0; k<lcslen; k++){
+                                             if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
+                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
+                                             } else {
+                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
+                                             }
                                              
-                                             PhaseVec.push_back(std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
+                                             PhaseVec[k] = (std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
                                          }
-                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0);
-                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0);
+                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
+                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
                                          if(!(BestDist < CurrDist)){
                                              BestDist = CurrDist;
                                              BestConsts[0][0] = i;
@@ -485,35 +550,50 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                              for(int i = 0; i<CSet1.size(); i++){
                                      for(int j = 0; j<CSet2.size(); j++){
 
-                                     std::vector<std::vector<double>> tVec1;
+                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                     std::vector<std::vector<double>> tVec2;
+                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<double> DistVec;
-                                         std::vector<double> PhaseVec;
-                                         std::vector<double> StepVec;
-                                             for(int m = 0; m<CSet1[0].size(); m++){
-                                                 std::vector<double> TPair1;
-                                                 TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                                 TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                                 tVec1.push_back(TPair1);
-                                                 std::vector<double> TPair2;
-                                                 TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                                 TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                                 tVec2.push_back(TPair2);
+                                             std::vector<double> DistVec(lcslen, NAN);
+                                             std::vector<double> StepVec(lcslen, NAN);
+                                                 for(int m = 0; m<lcslen; m++){
+                                                     std::vector<double> TPair1(2, NAN);
+                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                     tVec1[m] = TPair1;
+                                                     std::vector<double> TPair2(2, NAN);
+                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                     tVec2[m] = TPair2;
+                                                 }
+                                             
+                                         
+                                         if(!(DistLUT[CSet1[0][0]][CSet2[0][0]] > 0)){
+                                         DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
+                                             DistLUT[CSet1[0][0]][CSet2[0][0]] = DistVec[0];
+                                         } else{
+                                             DistVec[0] = DistLUT[CSet1[0][0]][CSet2[0][0]];
+                                         }
+                                                                                  
+                                         StepVec[0] = (0);
+                                         
+                                     for(int k = 1; k<lcslen; k++){
+                                         if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
+                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
+                                             } else {
+                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
                                              }
                                          
-                                         DistVec.push_back((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                                                                                  
-                                         StepVec.push_back(0);
-                                         
-                                     for(int k = 1; k<tVec1.size(); k++){
-                                         DistVec.push_back((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                         
-                                         StepVec.push_back((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                         if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
+                                         StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                             StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
+                                         } else {
+                                             StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
+                                         }
                                      }
-                                     double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0);
-                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0);
+                                     double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
+                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
                                      
                                      if(!(BestDist < CurrDist)){
                                          BestDist = CurrDist;
@@ -536,26 +616,32 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                              for(int i = 0; i<CSet1.size(); i++){
                                      for(int j = 0; j<CSet2.size(); j++){
 
-                                     std::vector<std::vector<double>> tVec1;
+                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                     std::vector<std::vector<double>> tVec2;
+                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<double> DistVec;
+                                             std::vector<double> DistVec(lcslen, NAN);
 
-                                             for(int m = 0; m<CSet1[0].size(); m++){
-                                                 std::vector<double> TPair1;
-                                                 TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                                 TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                                 tVec1.push_back(TPair1);
-                                                 std::vector<double> TPair2;
-                                                 TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                                 TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                                 tVec2.push_back(TPair2);
+                                                 for(int m = 0; m<lcslen; m++){
+                                                     std::vector<double> TPair1(2, NAN);
+                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                     tVec1[m] = TPair1;
+                                                     std::vector<double> TPair2(2, NAN);
+                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                     tVec2[m] = TPair2;
+                                                 }
+                                             
+                              for(int k = 0; k<lcslen; k++){
+                                  if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
+                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
+                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
+                                             } else {
+                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
                                              }
-                              for(int k = 0; k<tVec1.size(); k++){
-                                  DistVec.push_back((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
                               }
-                              double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0);
+                              double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
                               if(!(BestDist < CurrDist)){
                                   BestDist = CurrDist;
                                   BestConsts[0][0] = i;
@@ -573,43 +659,53 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                              for(int i = 0; i<CSet1.size(); i++){
                                      for(int j = 0; j<CSet2.size(); j++){
 
-                                     std::vector<std::vector<double>> tVec1;
+                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                     std::vector<std::vector<double>> tVec2;
+                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<double> PhaseVec;
-                                         std::vector<double> StepVec;
-                                             for(int m = 0; m<CSet1[0].size(); m++){
-                                                 std::vector<double> TPair1;
-                                                 TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                                 TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                                 tVec1.push_back(TPair1);
-                                                 std::vector<double> TPair2;
-                                                 TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                                 TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                                 tVec2.push_back(TPair2);
-                                             }
-                                         
-                                         std::vector<double> DiffVec;
+                                             std::vector<double> PhaseVec(lcslen, NAN);
+                                             std::vector<double> StepVec(lcslen, NAN);
+                                                 for(int m = 0; m<lcslen; m++){
+                                                     std::vector<double> TPair1(2, NAN);
+                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                     tVec1[m] = TPair1;
+                                                     std::vector<double> TPair2(2, NAN);
+                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                     tVec2[m] = TPair2;
+                                                 }
+                                             
+                                             std::vector<double> DiffVec(lcslen, NAN);
                                          double DiffMean;
-                                         for(int k = 0; k<tVec1.size(); k++){
-                                             DiffVec.push_back((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                         for(int k = 0; k<lcslen; k++){
+                                                if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
+                                                    DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                                    DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
+                                                } else {
+                                                    DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
+                                                }
                                          }
                                          
                                          double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
                                          DiffMean = DiffSum / (2 * DiffVec.size());
                                          
-                                         PhaseVec.push_back(std::pow(tVec1[0][0]-tVec2[0][0] - DiffMean, 2)  +  std::pow(tVec1[0][1]-tVec2[0][1] - DiffMean, 2));
+                                         PhaseVec[0] = (std::pow(tVec1[0][0]-tVec2[0][0] - DiffMean, 2)  +  std::pow(tVec1[0][1]-tVec2[0][1] - DiffMean, 2));
                                          
-                                         StepVec.push_back(0);
+                                         StepVec[0] = (0);
                                          
-                                     for(int k = 1; k<tVec1.size(); k++){
-                                         PhaseVec.push_back(std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
+                                     for(int k = 1; k<lcslen; k++){
+                                         PhaseVec[k] = (std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
                                          
-                                         StepVec.push_back((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                         if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
+                                         StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                             StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
+                                         } else {
+                                             StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
+                                         }
                                      }
-                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0);
-                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0);
+                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
+                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
                                      if(!(BestPhase < CurrPhase)){
                                          BestPhase = CurrPhase;
                                          BestConsts[0][0] = i;
@@ -630,36 +726,41 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                              for(int i = 0; i<CSet1.size(); i++){
                                      for(int j = 0; j<CSet2.size(); j++){
 
-                                     std::vector<std::vector<double>> tVec1;
+                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                     std::vector<std::vector<double>> tVec2;
+                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-                                         std::vector<double> PhaseVec;
-                                             for(int m = 0; m<CSet1[0].size(); m++){
-                                                 std::vector<double> TPair1;
-                                                 TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                                 TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                                 tVec1.push_back(TPair1);
-                                                 std::vector<double> TPair2;
-                                                 TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                                 TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                                 tVec2.push_back(TPair2);
-                                             }
-                                         
-                                         std::vector<double> DiffVec;
+                                             std::vector<double> PhaseVec(lcslen, NAN);
+                                                 for(int m = 0; m<lcslen; m++){
+                                                     std::vector<double> TPair1(2, NAN);
+                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                     tVec1[m] = TPair1;
+                                                     std::vector<double> TPair2(2, NAN);
+                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                     tVec2[m] = TPair2;
+                                                 }
+                                             
+                                             std::vector<double> DiffVec(lcslen, NAN);
                                          double DiffMean;
-                                         for(int k = 0; k<tVec1.size(); k++){
-                                             DiffVec.push_back((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                         for(int k = 0; k<lcslen; k++){
+                                                if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
+                                                    DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
+                                                    DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
+                                                } else {
+                                                    DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
+                                                }
                                          }
                                          
-                                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0);
+                                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
                                          DiffMean = DiffSum / (2 * DiffVec.size());
                                          
-                                     for(int k = 0; k<tVec1.size(); k++){
-                                         PhaseVec.push_back(std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
+                                     for(int k = 0; k<lcslen; k++){
+                                         PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
                                          
                                      }
-                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0);
+                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
                                      if(!(BestPhase < CurrPhase)){
                                          BestPhase = CurrPhase;
                                          BestConsts[0][0] = i;
@@ -675,29 +776,33 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                          for(int i = 0; i<CSet1.size(); i++){
                                  for(int j = 0; j<CSet2.size(); j++){
 
-                                 std::vector<std::vector<double>> tVec1;
+                                     std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
 
-                                 std::vector<std::vector<double>> tVec2;
+                                     std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
 
-
-                                     std::vector<double> StepVec;
-                                         for(int m = 0; m<CSet1[0].size(); m++){
-                                             std::vector<double> TPair1;
-                                             TPair1.push_back(TSeqArr1[CSet1[i][m]]);
-                                             TPair1.push_back(TSeqDep1[CSet1[i][m]]);
-                                             tVec1.push_back(TPair1);
-                                             std::vector<double> TPair2;
-                                             TPair2.push_back(TSeqArr2[CSet2[j][m]]);
-                                             TPair2.push_back(TSeqDep2[CSet2[j][m]]);
-                                             tVec2.push_back(TPair2);
-                                         }
+                                         std::vector<double> StepVec(lcslen, NAN);
+                                             for(int m = 0; m<lcslen; m++){
+                                                 std::vector<double> TPair1(2, NAN);
+                                                 TPair1[0] = TSeqArr1[CSet1[i][m]];
+                                                 TPair1[1] = TSeqDep1[CSet1[i][m]];
+                                                 tVec1[m] = TPair1;
+                                                 std::vector<double> TPair2(2, NAN);
+                                                 TPair2[0] = TSeqArr2[CSet2[j][m]];
+                                                 TPair2[1] = TSeqDep2[CSet2[j][m]];
+                                                 tVec2[m] = TPair2;
+                                             }
                                      
-                                     StepVec.push_back(0);
+                                     StepVec[0] = (0);
                                      
-                                 for(int k = 1; k<tVec1.size(); k++){
-                                     StepVec.push_back((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                 for(int k = 1; k<lcslen; k++){
+                                     if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
+                                     StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
+                                         StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
+                                     } else {
+                                         StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
+                                     }
                                  }
-                                 double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0);
+                                 double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
                                  if(!(BestStep < CurrStep)){
                                      BestStep = CurrStep;
                                      BestConsts[0][0] = i;
@@ -711,35 +816,35 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
 
                       // By the end of this loop, we have the two best constructors for each sequence
 
-                      std::vector<std::vector<std::vector<std::vector<double>>>> BestPair(l);
+                      std::vector<std::vector<std::vector<std::vector<double>>>> BestPair(l, std::vector<std::vector<std::vector<double>>>(2));
                      for(int f = 0; f < l; f++){
                          // We'd need to build this specific case of Constr Table a lil differently, but it's manageable!
 
                          
-                             std::vector<std::vector<double>> TPairVec1;
+                             std::vector<std::vector<double>> TPairVec1(lcslen, std::vector<double>(2, NAN));
                              
-                             for(int j = 0; j<CSet1[0].size(); j++){
-                                 std::vector<double> TPair1;
-                                 TPair1.push_back(TSeqArr1[CSet1[BestConsts[f][0]][j]]);
-                                 TPair1.push_back(TSeqDep1[CSet1[BestConsts[f][0]][j]]);
-                                 TPairVec1.push_back(TPair1);
+                             for(int j = 0; j<lcslen; j++){
+                                 std::vector<double> TPair1(2, NAN);
+                                 TPair1[0] = (TSeqArr1[CSet1[BestConsts[f][0]][j]]);
+                                 TPair1[1] = (TSeqDep1[CSet1[BestConsts[f][0]][j]]);
+                                 TPairVec1[j] = (TPair1);
                              }
                             
                          
                          
                          
-                             std::vector<std::vector<double>> TPairVec2;
+                         std::vector<std::vector<double>> TPairVec2(lcslen, std::vector<double>(2, NAN));
                              
                              for(int j = 0; j<CSet2[0].size(); j++){
-                                 std::vector<double> TPair2;
-                                 TPair2.push_back(TSeqArr2[CSet2[BestConsts[f][1]][j]]);
-                                 TPair2.push_back(TSeqDep2[CSet2[BestConsts[f][1]][j]]);
-                                 TPairVec2.push_back(TPair2);
+                                 std::vector<double> TPair2(2, NAN);
+                                 TPair2[0] = (TSeqArr2[CSet2[BestConsts[f][1]][j]]);
+                                 TPair2[1] = (TSeqDep2[CSet2[BestConsts[f][1]][j]]);
+                                 TPairVec2[j] = (TPair2);
                              }
                              
                          
-                      BestPair[f].push_back(TPairVec1);
-                      BestPair[f].push_back(TPairVec2);
+                      BestPair[f][0] = (TPairVec1);
+                      BestPair[f][1] = (TPairVec2);
                     }
                       BestConst = BestPair;
                  }
@@ -870,11 +975,12 @@ std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>
     } else{
       Methods = Method;
     }
-    LCSConstructHunt(LCSset, Fish1Seq, Fish2Seq, PullSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Methods, LocLib, lcslen);
+    LCSConstructHunt(LCSset, Fish1Seq, Fish2Seq, PullSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Methods, LocLib, lcslen, Size1, Size2);
     //ConstructHunt will select one option to output as PullSet, which it will use part of the artist formerly known as LCSStapler to convert the integer LCS into the string LCS for.
     
     return PullSet;
 }
+
 
 
 
