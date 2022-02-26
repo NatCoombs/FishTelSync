@@ -1,7 +1,7 @@
 # Testing the LCS function
 
 install.packages("Rcpp", repos="https://rcppcore.github.io/drat")
-
+library(Rcpp)
 Rcpp::sourceCpp("Code/Functions/FullLCSExtractor.cpp")
 
 TestLCS<-LCSExtract(c('A','B','C','D'),c('A','C','B','D'),c(0,2,4,6),c(1,3,5,7),c(0,4,5,8),c(1,4.5,6,12),c("All"))

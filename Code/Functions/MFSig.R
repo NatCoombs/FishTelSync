@@ -79,17 +79,19 @@ MFSig<-function(FishPairSet, RealDense, LCSList, MFS1, MFS2, Reps, Seed = 1){
     # cat(match(match(TermPairs[i,1],LCSTab[,1]),
     #           match(TermPairs[i,2],LCSTab[,2])), "\n")
     
-    if(is.na( (match(TermPairs[i,1] ,LCSTab[,1]) && match(TermPairs[i,2],LCSTab[,2])))){
+    TPKey<- which(which(LCSTab[,1] %in% TermPairs[i,1]) %in%
+      which(LCSTab[,2] %in% TermPairs[i,2]))
+    
+    if(!length(TPKey)){
       
       ListKey <- NA 
-      cat(ListKey, "\n")
+      #cat(ListKey, "\n")
       } else {
         
-    ListKey <- which(LCSTab[,1] %in% TermPairs[i,1]) [which(LCSTab[,1] %in% TermPairs[i,1]) %in%
-                             which(LCSTab[,2] %in% TermPairs[i,2])]
-    cat(ListKey, "\n")
+    ListKey <- which(LCSTab[,1] %in% TermPairs[i,1])[TPKey]
+    #cat(ListKey, "\n")
       }
-    cat(ListKey, "\n")
+    #cat(ListKey, "\n")
     #cat(ListKey, "\n")
     if(is.na(ListKey)){
       # Append a new row to LCSTab

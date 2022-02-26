@@ -324,6 +324,63 @@ FWS07CppDebug<-function(index){
 
 FWS07CppDebug(1)
 
+SigDebugPull<-function(MFS1,MFS2,Term1,Term2,Index){
+  
+  SynthTerms <- matrix(data = NA, nrow = length(unique(MFS1[,"IDcol"])),
+                       ncol = 4)
+  
+  for(i in 1:length(unique(MFS1[,"IDcol"]))){
+    # cat(i, "\n")
+    SynthTerms[i,1] <- i
+    
+    SynthTerms[i,3] <- i
+    
+    SynthSub1 <- MFS1[MFS1[,"IDcol"] %in% i,]
+    
+    SynthSub2 <- MFS2[MFS2[,"IDcol"] %in% i,]
+    
+    SynthTerms[i,2] <- SynthSub1[,"Loccol"][length(SynthSub1[,"Loccol"])]
+    
+    SynthTerms[i,4] <- SynthSub2[,"Loccol"][length(SynthSub2[,"Loccol"])]
+  }
+  cat("Terminal locations of surrogate fish found \n")
+  
+  F1Set <- which(SynthTerms[,2] %in% Term1)
+  F2Set <- which(SynthTerms[,4] %in% Term2)
+  
+  PairBlock <- matrix(data = NA, nrow = length(F1Set)*length(F2Set), ncol = 2)
+  PairDex <- 1
+  for(k in 1:length(F1Set)){
+    for(j in 1:length(F2Set)){
+      PairBlock[PairDex,1] <- F1Set[k]
+      PairBlock[PairDex,2] <- F2Set[j]
+      PairDex <- PairDex + 1
+    }  
+  }
+  
+  MFS1Sub <- MFS1[which(MFS1[,"IDcol"] %in% PairBlock[Index,1]),]
+  MFS2Sub <- MFS2[which(MFS2[,"IDcol"] %in% PairBlock[Index,2]),]
+  
+  cat("std::vector<std::string> Fish1Seq_ {", paste(shQuote(MFS1Sub[,"Loccol"], type = "cmd"), collapse = ", "), "}; \n")
+  cat("std::vector<std::string> Fish2Seq_ {", paste(shQuote(MFS2Sub[,"Loccol"], type = "cmd"), collapse = ", "), "}; \n")
+  
+  cat("std::vector<double> TSeqArr1 {", paste(as.numeric(MFS1Sub[,"T1col"]), 
+                                              collapse = ", "), "}; \n")
+  cat("std::vector<double> TSeqDep1 {", paste(as.numeric(MFS1Sub[,"T2col"]), 
+                                            collapse = ", "), "}; \n")
+  
+  cat("std::vector<double> TSeqArr2 {", paste(as.numeric(MFS2Sub[,"T1col"]), 
+                                              collapse = ", "), "}; \n")
+  cat("std::vector<double> TSeqDep2 {", paste(as.numeric(MFS2Sub[,"T2col"]), 
+                                              collapse = ", "), "}; \n")
+  
+# This will serve as a void function and cat out what we want it to instead
+}
+
+SigDebugPull(FWS07Surrs[[1]],FWS07Surrs[[2]],"Battle_Ck","SR_AbvBattleCk",630)
+
+
+SigDebugPull(FWS07Surrs[[1]],FWS07Surrs[[2]],"Golden Gate and Ocean","Benicia Bridge",10694)
 
 
 Test<-matrix(data = NA, ncol = 2)
