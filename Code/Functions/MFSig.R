@@ -83,11 +83,11 @@ MFSig<-function(FishPairSet, RealDense, LCSList, MFS1, MFS2, Reps, Seed = 1){
       which(LCSTab[,2] %in% TermPairs[i,2]))
     
     if(!length(TPKey)){
-      
+      cat("New key \n")
       ListKey <- NA 
       #cat(ListKey, "\n")
       } else {
-        
+        cat("Old key: ", TPKey, "\n")
     ListKey <- which(LCSTab[,1] %in% TermPairs[i,1])[TPKey]
     #cat(ListKey, "\n")
       }
@@ -103,7 +103,7 @@ MFSig<-function(FishPairSet, RealDense, LCSList, MFS1, MFS2, Reps, Seed = 1){
       
       cat("Beginning an LCS synchrony evaluation block \n")
       F1Set <- which(SynthTerms[,2] %in% TermPairs[i,1])
-      cat("F1Set is ", length(F1Set), " long \n")
+      #cat("F1Set is ", length(F1Set), " long \n")
 
       F2Set <- which(SynthTerms[,4] %in% TermPairs[i,2])
 
@@ -122,7 +122,7 @@ MFSig<-function(FishPairSet, RealDense, LCSList, MFS1, MFS2, Reps, Seed = 1){
       PSVec<-vector(mode = "numeric", length = Reps)
       LSVec<-vector(mode = "numeric", length = Reps)
       #cat("The surrogate pairs are: ", PairBlock, " \n")
-      cat("There are ", dim(PairBlock)[1], " surrogate pairs \n")
+      #cat("There are ", dim(PairBlock)[1], " surrogate pairs \n")
       #cat("Abandon all hope, ye who run code past here \n")
       #scan()
       Printdex <- 1
@@ -131,8 +131,8 @@ MFSig<-function(FishPairSet, RealDense, LCSList, MFS1, MFS2, Reps, Seed = 1){
      
       for(j in 1:Reps){
         #scan()
-        cat("The terminal locations are:", TermPairs[i,], "\n")
-        cat("The index for the subset of surrogate pairs is:", Testkey[j], "\n")
+        #cat("The terminal locations are:", TermPairs[i,], "\n")
+        #cat("The index for the subset of surrogate pairs is:", Testkey[j], "\n")
         MFS1Sub <- MFS1[which(MFS1[,"IDcol"] %in% PairBlock[Testkey[j],1]),]
         #scan()
         #typeof(MFS1Sub)
@@ -152,7 +152,7 @@ MFSig<-function(FishPairSet, RealDense, LCSList, MFS1, MFS2, Reps, Seed = 1){
         PSVec[j]<-ReducedBlock[[14]]
         LSVec[j]<-ReducedBlock[[21]]
         
-        cat("The completed run #: ", Printdex, "\n")
+        #cat("The completed run #: ", Printdex, "\n")
         Printdex <- Printdex+1
       }
       

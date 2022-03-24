@@ -245,7 +245,7 @@ std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, s
     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
     std::vector<std::vector<int>> CSet;
     std::vector<int> p(lcslen);
-    std::cout << "The number of nodes visited is: ";
+    //std::cout << "The number of nodes visited is: ";
     std::vector<bool> visited(Graph.size(),false);
     int NodeInc = 0;
     for(int i = 0; i < StartKeys.size(); i++){
@@ -293,7 +293,7 @@ std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, s
                     
                 } else {
                     NodeInc++;
-                    std::cout << NodeInc << " ";
+                   // std::cout << NodeInc << " ";
                     //std::cout << "The most recent new node visited is: " <<Curr << "\n";
                     
                     visited[Curr] = true;
@@ -319,7 +319,7 @@ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Gra
     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
     std::vector<std::vector<int>> CSet;
     std::vector<int> p(lcslen);
-    std::cout << "The number of nodes visited is: ";
+    //std::cout << "The number of nodes visited is: ";
     //std::vector<bool> visited(Graph.size(),false);
     int NodeInc = 0;
     for(int i = 0; i < StartKeys.size(); i++){
@@ -339,7 +339,7 @@ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Gra
                 
                
                     NodeInc++;
-                    std::cout << NodeInc << " ";
+                  //  std::cout << NodeInc << " ";
                     //std::cout << "The most recent new node visited is: " <<Curr << "\n";
                     
                     //visited[Curr] = true;
@@ -448,27 +448,28 @@ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, s
     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
     int PartDex = 5;
     std::vector<std::vector<int>> CSet;
-    int MaxDepth = *std::max_element(DKey[1].begin(),DKey[1].end());
-    int dodec = std::ceil(MaxDepth / PartDex);
-    std::cout << dodec << " is the number of partitions to be included in the constructor set.\nThe current number of partitions evaluated is: ";
+    int MaxDepth = (lcslen - 1);
+    int dodec = std::ceil((MaxDepth + 1) / PartDex);
+    int end = dodec-1;
+    //std::cout << dodec << " is the number of partitions to be included in the constructor set.\nThe current number of partitions evaluated is: ";
     
     std::vector<std::vector<std::vector<int>>> PathComp(dodec);
-    for(int i = 0; i < dodec - 1; i++){
+    for(int i = 0; i < end; i++){
         std::vector<std::vector<int>> Parti;
         int lB = i*PartDex;
         int uB = (i+1)*PartDex;
         
         Parti = DnCSub(Graph, DKey, uB, lB);
-        std::cout << i + 1 << " ";
+       // std::cout << i + 1 << " ";
         
         
         PathComp[i] = Parti;
     }
-    int lB = (dodec-1)*PartDex;
+    int lB = end*PartDex;
     int uB = MaxDepth;
     
-    PathComp[(dodec-1)] = DnCSub(Graph, DKey, uB, lB);
-    std::cout << dodec << "\n";
+    PathComp[end] = DnCSub(Graph, DKey, uB, lB);
+    //std::cout << dodec << "\n";
     std::vector<std::vector<int>> Ends(dodec);
     std::vector<std::vector<int>> Starts(dodec);
 //    for(int i = 0; i < PathComp[0].size(); i++){
@@ -477,18 +478,16 @@ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, s
 //        Ends[0][i] = CSet[i][19];
 //    }
     
-    for(int i = 0; i < dodec-1; i++){
-        int PlB = (i*PartDex);
-        int PuB = (i+1)*PartDex;
+    for(int i = 0; i < end; i++){
         for(int j = 0; j < PathComp[i].size(); j++){
-            Starts[i].push_back(PathComp[i][j][PlB]);
-            Ends[i].push_back(PathComp[i][j][PuB]);
+            Starts[i].push_back(PathComp[i][j][0]);
+            Ends[i].push_back(PathComp[i][j][PartDex]);
         }
     }
-    int end = dodec-1;
+    
     for(int j = 0; j < PathComp[end].size(); j++){
-        Starts[end].push_back(PathComp[end][j][lB]);
-        Ends[end].push_back(PathComp[end][j][uB]);
+        Starts[end].push_back(PathComp[end][j][0]);
+        Ends[end].push_back(PathComp[end][j][uB - lB]);
     }
     
     std::vector<std::vector<std::vector<int>>> PathEdges(end);
@@ -517,13 +516,13 @@ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, s
     std::vector<std::vector<std::vector<std::vector<int>>>> DdexPaths(2);
     int F1;
     int F2;
-    int incr = 0;
+//    int incr = 0;
     for(int i = 0; i < PathComp[0].size(); i++){
         std::vector<std::vector<int>> Plug = {PathComp[0][i]};
         DdexPaths[0].push_back(Plug);
     }
     
-    std::cout << "The current number of partitions in the constructor set is: 1 ";
+    //std::cout << "The current number of partitions in the constructor set is: 1 ";
     
     for(int i = 1; i < dodec; i++){
         if(i % 2 == 0){
@@ -548,7 +547,7 @@ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, s
                     std::vector<int> AddPath = PathComp[i][k];
                     for(int l = 0; l < PathSub.size(); l++){
                         std::vector<int> BasePath = PathSub[l];
-                        BasePath.insert(BasePath.end(),AddPath.begin(),AddPath.end());
+                        BasePath.insert(BasePath.end(),AddPath.begin() + 1,AddPath.end());
                         PathSet.push_back(BasePath);
                     }
                 }
@@ -557,7 +556,7 @@ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, s
             }
         }
         DdexPaths[F1] = DexSubPaths;
-        std::cout << i + 1 << " ";
+        //std::cout << i + 1 << " ";
     }
     // At the end of the loop, F1 is the one we want to unravel into each constructor
     for(int i = 0; i < DdexPaths[F1].size(); i++){
@@ -565,7 +564,7 @@ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, s
             CSet.push_back(DdexPaths[F1][i][j]);
         }
     }
-    std::cout << "\n";
+   // std::cout << "\n";
     return CSet;
 }
 //
@@ -812,17 +811,17 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
         // Now for an iterative search approach to see how much we pull out!
        // std::vector<std::vector<int>> UnTLCSet1 = AllPathsInvert(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
        // std::vector<std::vector<int>> UnTLCSet2 = AllPathsInvert(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
-        if(lcslen < 30){
-             UnTLCSet1 = AllPathsInvert(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
-             UnTLCSet2 = AllPathsInvert(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
-        } else {
-            UnTLCSet1 = AllPathsDnC(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
-            UnTLCSet2 = AllPathsDnC(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
-        }
+//        if(lcslen < 40){
+//             UnTLCSet1 = AllPathsInvert(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
+//             UnTLCSet2 = AllPathsInvert(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
+//        } else {
+//            UnTLCSet1 = AllPathsDnC(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
+//            UnTLCSet2 = AllPathsDnC(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
+//        }
+//
         
-        
-//        std::vector<std::vector<int>> UnTLCSet1 = AllPathsDFSNaive(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
-//        std::vector<std::vector<int>> UnTLCSet2 = AllPathsDFSNaive(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
+        UnTLCSet1 = AllPathsDFSNaive(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
+        UnTLCSet2 = AllPathsDFSNaive(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
 //        std::vector<std::vector<int>> UnTLCSet1 = AllPathsBFS(CGraph1, Keys1[0], Keys1[1]);
 //        std::vector<std::vector<int>> UnTLCSet2 = AllPathsBFS(CGraph2, Keys2[0], Keys2[1]);
 
@@ -1589,7 +1588,6 @@ std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>
     
     return PullSet;
 }
-
 
 
 

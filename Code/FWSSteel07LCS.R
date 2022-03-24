@@ -233,7 +233,7 @@ for(i in 1:253){
 }
 
 
- FWS07LDMat<-matrix(nrow = 23, ncol = 23)
+FWS07LDMat<-matrix(nrow = 23, ncol = 23, data = 0)
 rownames(FWS07LDMat) <- FWS07PairChain
 colnames(FWS07LDMat) <- FWS07PairChain
 FWS07LSMat <- FWS07LDMat
@@ -250,6 +250,10 @@ for(i in 1:253){
   FWS07PSMat[LDk2,LDk1] <- ( (as.numeric(ReducedFWS07[[i]][[14]])))
   FWS07LSMat[LDk2,LDk1] <- ( (as.numeric(ReducedFWS07[[i]][[21]])))
 }
+library(wsyn)
+cluseigen(FWS07LDMat)
+cluseigen(FWS07PSMat)
+cluseigen(FWS07LSMat)
 
 TestLDClustOrd <- order.dendrogram(as.dendrogram(hclust(as.dist(FWS07LDMat))))
 
@@ -381,6 +385,10 @@ SigDebugPull(FWS07Surrs[[1]],FWS07Surrs[[2]],"Battle_Ck","SR_AbvBattleCk",630)
 
 
 SigDebugPull(FWS07Surrs[[1]],FWS07Surrs[[2]],"Golden Gate and Ocean","Benicia Bridge",10694)
+
+SigDebugPull(FWS07Surrs[[1]],FWS07Surrs[[2]],"Golden Gate and Ocean","Benicia Bridge",660)
+
+SigDebugPull(FWS07Surrs[[1]],FWS07Surrs[[2]],"Golden Gate and Ocean","Benicia Bridge",3684)
 
 
 Test<-matrix(data = NA, ncol = 2)
