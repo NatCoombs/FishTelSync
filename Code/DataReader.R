@@ -16,4 +16,17 @@ write.csv(TestingSubset, file = "Code/Functions/TestingData/SRCTestSub1.csv")
 CAland<-rgdal::readOGR("/Users/nathanielcoombs/Downloads/ca-state-boundary")
 
 CALandLL = spTransform(CAland, "+init=epsg:4326")
-plot(CALandLL, col = "Dark Green")
+plot(CALandLL, col = "Dark Green", xlim = c(-123,-121), ylim = c(37,41))
+plot(CAHydroLL, col = "Blue", add = T, lwd = 2)
+points(x = Locs$Lon, y = Locs$Lat, col = "Yellow", pch = 16, cex = 2)
+title(main = "Primary detector sites in PATH")
+
+
+# Read in all locations
+
+JSATSLocs<-read.csv("Data/JSATSLL.csv")
+kHzLocs<-read.csv("Data/69kHzLL.csv")
+colnames(kHzLocs)<-c("Lat","Lon")
+Locs<-rbind(JSATSLocs, kHzLocs)
+
+

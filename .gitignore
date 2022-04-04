@@ -18,3 +18,9 @@ Data/Releases.csv
 Data/Cull.csv
 Data/ColemanRel.csv
 Data/HatchLocTimeNum.csv
+*.csv
+*.dbf
+*.prj
+*.shp
+*.shx
+*.xml
