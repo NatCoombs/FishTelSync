@@ -85,6 +85,7 @@ FWS07LocDenseSub$LastDet<-as.numeric(as.POSIXct(FWS07LocDenseSub$LastDet))
 
 Printdex <- 1
 
+Apples<-LCSCalc(FWS07LocDenseSub,SteelDemPairs)
 
 for(i in 1:length(SteelDemPairs[,1])){
   cat("The fish pair: ", SteelDemPairs[i,1]," ", SteelDemPairs[i,2], "\n")

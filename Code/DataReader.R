@@ -27,6 +27,6 @@ title(main = "Primary detector sites in PATH")
 JSATSLocs<-read.csv("Data/JSATSLL.csv")
 kHzLocs<-read.csv("Data/69kHzLL.csv")
 colnames(kHzLocs)<-c("Lat","Lon")
-Locs<-rbind(JSATSLocs, kHzLocs)
+Locs<-rbind(unique(JSATSLocs), unique(kHzLocs))
 
 

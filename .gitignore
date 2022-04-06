@@ -24,3 +24,9 @@ Data/HatchLocTimeNum.csv
 *.shp
 *.shx
 *.xml
+*.xcuserstate
+*.pbxproj
+*.pbxproj
+*.xcworkspacedata
+*.plist
+Code/NatLCSMemWiz/NatLCSMemWiz.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
