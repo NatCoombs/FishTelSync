@@ -10,6 +10,7 @@ LCSCalc<-function(DenseTable, PairSet){
   LCSList<-list()
   cat(nrow(PairSet), " runs to complete. The completed run #:")
   Printdex <- 1
+  DenseTable <- na.omit(DenseTable)
   for(i in 1:nrow(PairSet)){
     #cat("The fish pair: ", PairSet[i,1]," ", PairSet[i,2], "\n")
     
@@ -18,13 +19,15 @@ LCSCalc<-function(DenseTable, PairSet){
     Key2 <- which(DenseTable[,"FishID"] %in% PairSet[i,2])
     
     LCSList[[i]]<-LCSExtract(DenseTable[Key1,"Loc"],
-                                     FWS07LocDenseSub[Key2,"Loc"],
-                                     as.numeric(FWS07LocDenseSub[Key1,"FirstDet"]),
-                                     as.numeric(FWS07LocDenseSub[Key1,"LastDet"]),
-                                     as.numeric(FWS07LocDenseSub[Key2,"FirstDet"]),
-                                     as.numeric(FWS07LocDenseSub[Key2,"LastDet"]),
+                             DenseTable[Key2,"Loc"],
+                                     as.numeric(DenseTable[Key1,"FirstDet"]),
+                                     as.numeric(DenseTable[Key1,"LastDet"]),
+                                     as.numeric(DenseTable[Key2,"FirstDet"]),
+                                     as.numeric(DenseTable[Key2,"LastDet"]),
                                      c("All"))
     cat(Printdex, " ")
+    
     Printdex <- Printdex+1
   }
+  return(LCSList)
 }

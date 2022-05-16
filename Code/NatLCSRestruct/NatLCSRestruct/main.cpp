@@ -21,7 +21,45 @@
 #include <queue>
 #include <stack>
 //int k = 0;
-
+double DiffM(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, std::vector<int> Const1, std::vector<int> Const2, std::vector<std::vector<double>> &DiffLUT){
+    
+    std::vector<double> DiffVec(C1.size(), NAN);
+    
+    double DiffMean;
+    for(int k = 0; k<C1.size(); k++){
+        if(!(DiffLUT[Const1[k]][Const2[k]] > 0)){
+            DiffVec[k] = ((C1[k][0] - C2[k][0]) + (C1[k][1] - C2[k][1]));
+            DiffLUT[Const1[k]][Const2[k]] = DiffVec[k];
+        } else{
+            DiffVec[k] = DiffLUT[Const1[k]][Const2[k]];
+        }
+    }
+    
+    double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
+    DiffMean = DiffSum / (2 * DiffVec.size());
+    return DiffMean;
+}
+double ConDist(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, int k){
+    double OutVal;
+    
+    OutVal = ((std::pow((C1[k][0] - C2[k][0]), 2) /2) + (std::pow((C1[k][1]-C2[0][1]),2) /2));
+    
+    return OutVal;
+}
+double ConPhase(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, int k, double DiffMean){
+    double OutVal;
+    
+    OutVal = (std::pow((C1[k][0]-C2[k][0] - DiffMean), 2)  +  std::pow((C1[k][1]-C2[k][1] - DiffMean), 2));
+    
+    return OutVal;
+}
+double ConStep(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, int k){
+    double OutVal;
+    
+    OutVal = ((std::pow((C1[k][0]-C1[k-1][1]) - (C2[k][0]-C2[k-1][1]),2)/2)  + (std::pow((C1[k][1]-C1[k][0]) - (C2[k][1]-C2[k][0]), 2)/2));
+    
+    return OutVal;
+}
 
 
 void IntLibConverter(std::vector<std::string> Fish1Seq_, std::vector<std::string> Fish2Seq_,
@@ -234,89 +272,100 @@ std::vector<std::vector<int>> KeyFinder(std::vector<std::vector<int>> DKey){
 //    }
 //    return CSet;
 //}
+void BestConsts(std::vector<int> Const1, std::vector<int> Const2, std::vector<std::vector<std::vector<int>>> &BestSet,
+                std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2,
+                std::vector<std::vector<double>> &tVec1, std::vector<std::vector<double>> &tVec2,
+                double & BestDist, double & BestPhase, double & BestStep,
+                std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::vector<std::vector<std::vector<std::vector<double>>>> & StepLUT,
+                std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec,
+                double & CurrDist, double & CurrPhase, double & CurrStep){
+    for(int m = 0; m<Const1.size(); m++){
+        std::vector<double> TPair1(2, NAN);
+        TPair1[0] = TSeqArr1[Const1[m]];
+        TPair1[1] = TSeqDep1[Const2[m]];
+        tVec1[m] = TPair1;
+        std::vector<double> TPair2(2, NAN);
+        TPair2[0] = TSeqArr2[Const1[m]];
+        TPair2[1] = TSeqDep2[Const2[m]];
+        tVec2[m] = TPair2;
+    }
+    
+    double DiffMean = DiffM(tVec1, tVec2, Const1, Const2, DiffLUT);
+    
 
-std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<int> p(lcslen);
-    std::cout << "The number of nodes visited is: ";
-    std::vector<bool> visited(Graph.size(),false);
-    int NodeInc = 0;
-    for(int i = 0; i < StartKeys.size(); i++){
-            
-            std::stack<int> s;
-            
-            s.push(StartKeys[i]);
+    
+    if(!(DistLUT[ Const1[0] ][ Const2[0] ] > 0)){
+        DistVec[0] = ConDist(tVec1, tVec2, 0);
+        DistLUT[Const1[0]][Const2[0]] = DistVec[0];
+    } else{
+        DistVec[0] = DistLUT[Const1[0]][Const2[0]];
+    }
+    
+    PhaseVec[0] = ConPhase(tVec1, tVec2, 0, DiffMean);
+
+    StepVec[0] = (0);
+    
+    
+    
+    for(int k = 1; k<Const1.size(); k++){
         
-            while(!s.empty()){
-                //std::cout << "The stack is: " << s.size() << " elements long.\n";
-                int Curr = s.top();
-                s.pop();
-                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
-                
-                int Depth = DKey[1][dInd - DKey[0].begin()];
-                
-                
-                if(visited[Curr]){
-                    //std::cout << "The most recent node revisited is: " <<Curr << "\n";
-                   // Let's add the crazy shit
-                    std::vector<std::vector<int>> VecSub;
-                    for(int j = 0; j < CSet.size(); j++){
-                        if(CSet[j][Depth] == Curr){
-                            std::vector<int> Twig;
-                            
-                            for(int k = Depth; k < lcslen; k++){
-                                Twig.push_back(CSet[j][k]);
-                            }
-                            VecSub.push_back(Twig);
-                        }
-                    }
-//Switch to using std::unique here
-                    
-                    std::sort(VecSub.begin(),VecSub.end());
-                    
-                    VecSub.erase(std::unique(VecSub.begin(),VecSub.end()),VecSub.end());
-                    
-                    
-                    for(int j = 0; j < VecSub.size(); j++){
-                        for(int k = Depth; k < lcslen; k++){
-                            p[k] = VecSub[j][(k - Depth)];
-                        }
-                        CSet.push_back(p);
-                    }
-                    
-                } else {
-                    NodeInc++;
-                    std::cout << NodeInc << " ";
-                    //std::cout << "The most recent new node visited is: " <<Curr << "\n";
-                    
-                    visited[Curr] = true;
-                    p[Depth] = Curr;
-                
-                    if(Depth == (lcslen-1)){
-                        CSet.push_back(p);
-                    
-                    } else {
-                
-                for(int k = 0; k < Graph[Curr].size(); k++){
-                    s.push(Graph[Curr][k]);
-                }
-                }
-                }
-            }
+        if(!(DistLUT[Const1[k]][Const2[k]] > 0)){
+            DistVec[k] = ConDist(tVec1, tVec2, k);;
+            DistLUT[Const1[k]][Const2[k]] = DistVec[k];
+        } else {
+            DistVec[k] = DistLUT[Const1[k]][Const2[k]];
+        }
+        
+        PhaseVec[k] = ConPhase(tVec1, tVec2, k, DiffMean);
+        
+        if(!(StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] > 0)){
+            StepVec[k] = ConStep(tVec1, tVec2, k);
+            StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] = StepVec[k];
+        } else {
+            StepVec[k] = StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]];
+        }
         
     }
-    return CSet;
+    
+    CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
+    CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
+    CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
+    
+    if(!(BestDist < CurrDist)){
+        BestDist = CurrDist;
+        for(int i = 0; i < DistVec.size(); i++){
+            BestSet[0][0][i] = Const1[i];
+            BestSet[0][1][i] = Const2[i];
+        }
+//                                             BestDistVec = DistVec;
+    }
+    if(!(BestPhase < CurrPhase)){
+        BestPhase = CurrPhase;
+        for(int i = 0; i < DistVec.size(); i++){
+            BestSet[1][0][i] = Const1[i];
+            BestSet[1][1][i] = Const2[i];
+        }
+//                                             BestPhaseVec = PhaseVec;
+    }
+    if(!(BestStep < CurrStep)){
+        BestStep = CurrStep;
+        for(int i = 0; i < DistVec.size(); i++){
+            BestSet[2][0][i] = Const1[i];
+            BestSet[2][1][i] = Const2[i];
+        }
+//                                             BestStepVec = StepVec;
+    }
+    //By this point, BestSet contains our best constructors. We can always come back and recalculate the values from here later.
+    
+    
 }
-
-std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<int> p(lcslen);
-    //std::cout << "The number of nodes visited is: ";
-    //std::vector<bool> visited(Graph.size(),false);
-    //int NodeInc = 0;
+void DFSInner(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen,
+              // Housekeeping arguments to pass to the core
+              std::vector<int> Const1, std::vector<int> & Const2, std::vector<std::vector<std::vector<int>>> &BestSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> &tVec1, std::vector<std::vector<double>> &tVec2, double & BestDist, double & BestPhase, double & BestStep, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::vector<std::vector<std::vector<std::vector<double>>>> & StepLUT, std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec, double & CurrDist, double & CurrPhase, double & CurrStep){
     int MaxDepth = lcslen - 1;
+    
+    std::vector<int> NodeVec(DKey[0].size(), NAN);
+    
     for(int i = 0; i < StartKeys.size(); i++){
             
             std::stack<int> s;
@@ -324,24 +373,16 @@ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Gra
             s.push(StartKeys[i]);
         
             while(!s.empty()){
-                //std::cout << "The stack is: " << s.size() << " elements long.\n";
                 int Curr = s.top();
                 s.pop();
-//                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
-//
-//                int Depth = DKey[1][dInd - DKey[0].begin()];
+
                 int Depth = DKey[1][Curr];
                 
-               
-                    //NodeInc++;
-                    //std::cout << NodeInc << " ";
-                    //std::cout << "The most recent new node visited is: " <<Curr << "\n";
-                    
-                    //visited[Curr] = true;
-                    p[Depth] = Curr;
+                Const2[Depth] = DKey[2][Curr];
                 
                     if(Depth == MaxDepth){
-                        CSet.push_back(p);
+                        
+                        BestConsts(Const1, Const2, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep);
                     
                     } else {
                 
@@ -351,301 +392,92 @@ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Gra
                 }
                 }
             }
-        
-    
-    return CSet;
 }
-std::vector<std::vector<int>> DnCSub(std::vector<std::vector<int>> Graph, std::vector<std::vector<int>> DKey, int MaxDepth, int MinDepth){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<std::vector<std::vector<int>>> EdgeTree(2);
-
-    int F1;
-    int F2;
-    if(MaxDepth % 2 == 0){
-        F1 = 0;
-        F2 = 1;
-    } else {
-        F1 = 1;
-        F2 = 0;
-    }
-    std::vector<int> LeafHolder(1);
-    for(int i = 0; i < DKey[1].size(); i++){
-        if(DKey[1][i] == MaxDepth){
-            LeafHolder[0] = DKey[0][i];
-            EdgeTree[F1].push_back(LeafHolder);
-        }
-    }
-    for(int i = (MaxDepth - 1); i > (MinDepth - 1); i--){
-        //std::cout << "The current depth being evaluated is: " << i + 1 << "\n";
-        //Set flags to alternate objects
-        if(i % 2 == 0){
-            F1 = 0;
-            F2 = 1;
-        } else {
-            F1 = 1;
-            F2 = 0;
-        }
-
-        std::vector<int> DepKey;
-
-        for(int j = 0; j < DKey[1].size(); j++){
-            if(DKey[1][j] == i){
-                DepKey.push_back(DKey[0][j]);
-            }
-        }
-        EdgeTree[F1].clear();
-        // Now we have a flagset & a set of nodes at this depth
-        for(int j = 0; j < DepKey.size(); j++){
-            int CurrNode = DepKey[j];
-            std::vector<int> AdjVec = Graph[DepKey[j]];
-            for(int k = 0; k < AdjVec.size(); k++){
-                int CurrChild = AdjVec[k];
-                // For each of these points, there will be one or more sets of "existing" paths
-                std::vector<int> PathVec;
-                for(int l = 0; l < EdgeTree[F2].size(); l++){
-                    if(EdgeTree[F2][l][0] == CurrChild){
-                        PathVec.push_back(l);
-                    }
-                }
-
-                // Now we have a vector of keys as to which paths we can append.
-                if(PathVec.size() > 0){
-                    EdgeTree[F1].reserve(EdgeTree[F1].size() + PathVec.size());
-                for(int l = 0; l < PathVec.size(); l++){
-                    std::vector<int> Path(1, CurrNode);
-                    Path.reserve(MaxDepth - i);
-                    Path.insert(Path.begin()+1,EdgeTree[F2][l].begin(),EdgeTree[F2][l].end());
-                    Path.shrink_to_fit();
-                    EdgeTree[F1].push_back(Path);
-                }} else {
-                    std::vector<int> Path(1, CurrNode);
-                    EdgeTree[F1].push_back(Path);
-                }
-
-            }
-        }
-
-    }
-    // At the end, EdgeTree[F1] contains every path from root to leaf as a vector, so we need to pull only those of appropriate length
-    int PathLength = MaxDepth - MinDepth + 1;
-    
-    for(int i = 0; i < EdgeTree[F1].size(); i++){
-        if(EdgeTree[F1][i].size() == (PathLength)){
-            CSet.push_back(EdgeTree[F1][i]);
-        }
-    }
-
-    return CSet;
-}
-
-std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    int PartDex = 5;
-    std::vector<std::vector<int>> CSet;
-    int MaxDepth = (lcslen - 1);
-    int dodec = std::ceil((MaxDepth + 1) / PartDex);
-    int end = dodec-1;
-    std::cout << dodec << " is the number of partitions to be included in the constructor set.\nThe current number of partitions evaluated is: ";
-    
-    std::vector<std::vector<std::vector<int>>> PathComp(dodec);
-    for(int i = 0; i < end; i++){
-        std::vector<std::vector<int>> Parti;
-        int lB = i*PartDex;
-        int uB = (i+1)*PartDex;
+void DFSOuter(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen,
+              // Housekeeping arguments to pass to the inner loop
+              std::vector<std::vector<int>> Graph2, std::vector<int> StartKeys2, std::vector<int> EndKeys2, std::vector<std::vector<int>> DKey2,
+              // Housekeeping arguments to pass to the core
+              std::vector<int> & Const1, std::vector<int> & Const2, std::vector<std::vector<std::vector<int>>> &BestSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> & tVec1, std::vector<std::vector<double>> & tVec2, double & BestDist, double & BestPhase, double & BestStep, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::vector<std::vector<std::vector<std::vector<double>>>> & StepLUT, std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec, double & CurrDist, double & CurrPhase, double & CurrStep){
+    int MaxDepth = lcslen - 1;
+    std::vector<int> NodeVec(DKey[0].size(), NAN);
+    for(int i = 0; i < StartKeys.size(); i++){
+            
+            std::stack<int> s;
+            
+            s.push(StartKeys[i]);
         
-        Parti = DnCSub(Graph, DKey, uB, lB);
-        std::cout << i + 1 << " ";
-        
-        
-        PathComp[i] = Parti;
-    }
-    int lB = end*PartDex;
-    int uB = MaxDepth;
-    
-    PathComp[end] = DnCSub(Graph, DKey, uB, lB);
-    std::cout << dodec << "\n";
-    std::vector<std::vector<int>> Ends(dodec);
-    std::vector<std::vector<int>> Starts(dodec);
-//    for(int i = 0; i < PathComp[0].size(); i++){
-//        CSet.push_back(PathComp[0][i]);
-//        Starts[0][i] = CSet[i][0];
-//        Ends[0][i] = CSet[i][19];
-//    }
-    
-    for(int i = 0; i < end; i++){
-        for(int j = 0; j < PathComp[i].size(); j++){
-            Starts[i].push_back(PathComp[i][j][0]);
-            Ends[i].push_back(PathComp[i][j][PartDex]);
-        }
-    }
-    
-    for(int j = 0; j < PathComp[end].size(); j++){
-        Starts[end].push_back(PathComp[end][j][0]);
-        Ends[end].push_back(PathComp[end][j][uB - lB]);
-    }
-    
-    std::vector<std::vector<std::vector<int>>> PathEdges(end);
-    for(int i = 0; i < end; i++){
-        std::vector<std::vector<int>> EdgeKeys;
-        for(int j = 0; j < Ends[i].size(); j++){
-            std::vector<int> EdgeVec;
-            int EndPoint = Ends[i][j];
-            std::vector<int> StartSet = Starts[i+1];
-            for(int k = 0; k < Starts[i + 1].size(); k++){
-                if(StartSet[k] == EndPoint){
-                    EdgeVec.push_back(k);
-                }
-            }
-            EdgeKeys.push_back(EdgeVec);
-        }
-        PathEdges[i] = EdgeKeys;
-    }
-    
-//    for(int i = 0; i < PathComp[0].size(); i++){
-//        CSet.push_back(PathComp[0][i]);
-//        Starts[0][i] = CSet[i][0];
-//        Ends[0][i] = CSet[i][19];
-//    }
-    // Okay, how do I keep this from being completely goddamn useless?
-    std::vector<std::vector<std::vector<std::vector<int>>>> DdexPaths(2);
-    int F1;
-    int F2;
-//    int incr = 0;
-    for(int i = 0; i < PathComp[0].size(); i++){
-        std::vector<std::vector<int>> Plug = {PathComp[0][i]};
-        DdexPaths[0].push_back(Plug);
-    }
-    
-    std::cout << "The current number of partitions in the constructor set is: 1 ";
-    
-    for(int i = 1; i < dodec; i++){
-        if(i % 2 == 0){
-            F1 = 0;
-            F2 = 1;
-        } else {
-            F1 = 1;
-            F2 = 0;
-        }
-        int Pathdex = i-1;
-        std::vector<int> EndSet = Ends[Pathdex];
-        std::vector<int> StartSet = Starts[i];
-        std::vector<std::vector<std::vector<int>>> DexSubPaths;
-        for(int j = 0; j < EndSet.size(); j++){
-            std::vector<std::vector<int>> PathSet;
-            //std::vector<int> BasePath = DdexPaths[F2][j][0];
-            int End = EndSet[j];
-            // Do some work here
-            for(int k = 0; k < StartSet.size(); k++){
-                if(StartSet[k] == End){
-                    std::vector<std::vector<int>> PathSub = DdexPaths[F2][j];
-                    std::vector<int> AddPath = PathComp[i][k];
-                    for(int l = 0; l < PathSub.size(); l++){
-                        std::vector<int> BasePath = PathSub[l];
-                        BasePath.insert(BasePath.end(),AddPath.begin() + 1,AddPath.end());
-                        PathSet.push_back(BasePath);
-                    }
-                }
+            while(!s.empty()){
+                int Curr = s.top();
+                s.pop();
+
+                int Depth = DKey[1][Curr];
                 
-                DexSubPaths.push_back(PathSet);
-            }
-        }
-        DdexPaths[F1] = DexSubPaths;
-        std::cout << i + 1 << " ";
-    }
-    // At the end of the loop, F1 is the one we want to unravel into each constructor
-    for(int i = 0; i < DdexPaths[F1].size(); i++){
-        for(int j = 0; j < DdexPaths[F1][i].size(); j++){
-            CSet.push_back(DdexPaths[F1][i][j]);
-        }
-    }
-    std::cout << "\n";
-    return CSet;
-}
-//
-std::vector<std::vector<int>> AllPathsInvert(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<std::vector<std::vector<int>>> EdgeTree(2);
-
-    int MaxDepth = *std::max_element(DKey[1].begin(),DKey[1].end());
-    int F1;
-    int F2;
-    if(MaxDepth % 2 == 0){
-        F1 = 0;
-        F2 = 1;
-    } else {
-        F1 = 1;
-        F2 = 0;
-    }
-    std::vector<int> LeafHolder(1);
-    for(int i = 0; i < DKey[1].size(); i++){
-        if(DKey[1][i] == MaxDepth){
-            LeafHolder[0] = DKey[0][i];
-            EdgeTree[F1].push_back(LeafHolder);
-        }
-    }
-    for(int i = (MaxDepth - 1); i > -1; i--){
-        //std::cout << "The current depth being evaluated is: " << i + 1 << "\n";
-        //Set flags to alternate objects
-        if(i % 2 == 0){
-            F1 = 0;
-            F2 = 1;
-        } else {
-            F1 = 1;
-            F2 = 0;
-        }
-
-        std::vector<int> DepKey;
-
-        for(int j = 0; j < DKey[1].size(); j++){
-            if(DKey[1][j] == i){
-                DepKey.push_back(DKey[0][j]);
-            }
-        }
-        EdgeTree[F1].clear();
-        // Now we have a flagset & a set of nodes at this depth
-        for(int j = 0; j < DepKey.size(); j++){
-            int CurrNode = DepKey[j];
-            std::vector<int> AdjVec = Graph[DepKey[j]];
-            for(int k = 0; k < AdjVec.size(); k++){
-                int CurrChild = AdjVec[k];
-                // For each of these points, there will be one or more sets of "existing" paths
-                std::vector<int> PathVec;
-                for(int l = 0; l < EdgeTree[F2].size(); l++){
-                    if(EdgeTree[F2][l][0] == CurrChild){
-                        PathVec.push_back(l);
-                    }
+                Const1[Depth] = DKey[2][Curr];
+                
+                    if(Depth == MaxDepth){
+                        
+                        DFSInner(Graph2, StartKeys2, EndKeys2, DKey2, lcslen, Const1, Const2, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrPhase);
+                    
+                    } else {
+                
+                for(int k = 0; k < Graph[Curr].size(); k++){
+                    s.push(Graph[Curr][k]);
                 }
-
-                // Now we have a vector of keys as to which paths we can append.
-                if(PathVec.size() > 0){
-                    EdgeTree[F1].reserve(EdgeTree[F1].size() + PathVec.size());
-                for(int l = 0; l < PathVec.size(); l++){
-                    std::vector<int> Path(1, CurrNode);
-                    Path.reserve(MaxDepth - i);
-                    Path.insert(Path.begin()+1,EdgeTree[F2][l].begin(),EdgeTree[F2][l].end());
-                    Path.shrink_to_fit();
-                    EdgeTree[F1].push_back(Path);
-                }} else {
-                    std::vector<int> Path(1, CurrNode);
-                    EdgeTree[F1].push_back(Path);
                 }
-
+                }
             }
-        }
-
-    }
-    // At the end, EdgeTree[F1] contains every path from root to leaf as a vector, so we need to pull only those of length == MaxDepth
-    for(int i = 0; i < EdgeTree[F1].size(); i++){
-        if(EdgeTree[F1][i].size() == (MaxDepth+1)){
-            CSet.push_back(EdgeTree[F1][i]);
-        }
-    }
-
-    return CSet;
+    
+    
+    
 }
-
+/*
+ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     std::vector<std::vector<int>> CSet;
+     std::vector<int> p(lcslen);
+     //std::cout << "The number of nodes visited is: ";
+     //std::vector<bool> visited(Graph.size(),false);
+     //int NodeInc = 0;
+     int MaxDepth = lcslen - 1;
+     for(int i = 0; i < StartKeys.size(); i++){
+             
+             std::stack<int> s;
+             
+             s.push(StartKeys[i]);
+         
+             while(!s.empty()){
+                 //std::cout << "The stack is: " << s.size() << " elements long.\n";
+                 int Curr = s.top();
+                 s.pop();
+ //                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
+ //
+ //                int Depth = DKey[1][dInd - DKey[0].begin()];
+                 int Depth = DKey[1][Curr];
+                 
+                
+                     //NodeInc++;
+                     //std::cout << NodeInc << " ";
+                     //std::cout << "The most recent new node visited is: " <<Curr << "\n";
+                     
+                     //visited[Curr] = true;
+                     p[Depth] = Curr;
+                 
+                     if(Depth == MaxDepth){
+                         CSet.push_back(p);
+                     
+                     } else {
+                 
+                 for(int k = 0; k < Graph[Curr].size(); k++){
+                     s.push(Graph[Curr][k]);
+                 }
+                 }
+                 }
+             }
+         
+     
+     return CSet;
+ }
+ */
 
 std::vector<std::vector<int>> NodeLocConvert(std::vector<std::vector<int>> & CSet_, std::vector<std::vector<int>> & DKey){
     std::vector<std::vector<int>> CSet(CSet_);
@@ -671,6 +503,26 @@ std::vector<std::vector<int>> NodeLocConvert(std::vector<std::vector<int>> & CSe
     
     return CSet;
 }
+/*
+ if(NodeVec[curr] > -1){
+     
+     Const1[curr] = int(NodeVec[curr]);
+     
+ } else {
+     
+     auto NInd = find(DKey[0].begin(), DKey[0].end(), curr);
+     int NodeC = DKey[2][NInd - DKey[0].begin()];
+     NodeVec[curr] = double(NodeC);
+     Const1[Curr] = NodeC;
+     
+ }
+ Const1[Depth] = Curr;
+ */
+
+
+
+
+
 
 void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> & PullSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib, int lcslen, int Size1, int Size2){
     std::vector<std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>>> Candidates(Method.size());
@@ -679,7 +531,8 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
     
     int BestConsts[l][2];
     
-    
+    std::vector<std::vector<int>> CGraph1;
+    std::vector<std::vector<int>> CGraph2;
     
     
     
@@ -707,10 +560,8 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                     FMT1[j] = Const1;
                     FMT2[j] = Const2;
             }
-        std::vector<int> Const1_(lcslen);
-        std::vector<int> Const2_(lcslen);
-        std::vector<std::vector<int>> CSet1;
-        std::vector<std::vector<int>> CSet2;
+        
+
         // Remember, this is still in a for loop to step through each LCS! Stepping through each constructor is done by the Construct Stepper
         std::vector<std::vector<int>> DKey1(3);
         std::vector<int> N;
@@ -814,698 +665,107 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
 //            UnTLCSet2 = AllPathsDnC(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
 //        }
 //
-        
-        UnTLCSet1 = AllPathsDFSNaive(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
-        UnTLCSet2 = AllPathsDFSNaive(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
-//        std::vector<std::vector<int>> UnTLCSet1 = AllPathsBFS(CGraph1, Keys1[0], Keys1[1]);
-//        std::vector<std::vector<int>> UnTLCSet2 = AllPathsBFS(CGraph2, Keys2[0], Keys2[1]);
-
-        //NodeLocConvert is helllla bugged.
-        // Currently has issues with some cases of LCS... maybe there's an upstream issue?
-        // Adjacency table is fine... Check traversal?
-        // Oh kill me and turn the corpse into proper fertilizer. It's in the DFS alg somewhere.
-        CSet1 = NodeLocConvert(UnTLCSet1, DKey1);
-        CSet2 = NodeLocConvert(UnTLCSet2, DKey2);
-        
-        
-        
-        //LCSConstructStepper(LCSset[i], FMT1, CSet1, Const1_, 0, 0, lcslen);
-        //LCSConstructStepper(LCSset[i], FMT2, CSet2, Const2_, 0, 0, lcslen);
-        // At this point, our CSets are built, our TSeq's are read in, we are as ready as we can be.
-        std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,std::vector<double>> LCSConst;
-
-
-
-        
-        // Construct selector will be replaced with a "raw" version that accounts for any included methods.
-        // We need to find a way to either evaluate as we go from this table or SOMETHING to make this faster.
-        // Put the logic switches in here
-        std::vector<double> BestDistVec;
-        std::vector<double> BestPhaseVec;
-        std::vector<double> BestStepVec;
+        std::vector<std::vector<std::vector<int>>> BestSet(3, std::vector<std::vector<int>>(2,std::vector<int>(lcslen,NAN)));
+        std::vector<std::vector<double>> tVec1(lcslen, std::vector<double> (2, NAN));
+        std::vector<std::vector<double>> tVec2(lcslen, std::vector<double> (2, NAN));
         double BestDist = NAN;
         double BestPhase = NAN;
         double BestStep = NAN;
-         
-        std::vector<std::vector<std::vector<std::vector<double>>>> BestConst(l);
-        std::vector<std::vector<double>> BestC1;
-        std::vector<std::vector<double>> BestC2;
+        std::vector<double> DistVec (lcslen, NAN);
+        std::vector<double> PhaseVec (lcslen, NAN);
+        std::vector<double> StepVec (lcslen, NAN);
+        double CurrDist = NAN;
+        double CurrPhase = NAN;
+        double CurrStep = NAN;
+        std::vector<int> Const1_(lcslen);
+        std::vector<int> Const2_(lcslen);
 
-       std::vector<std::vector<double>> tVec1;
-       std::vector<std::vector<double>> tVec2;
-       // Here is where the split into unknown territory begins
-        if(CSet1.size() == 1 && CSet2.size() == 1){
-            std::vector<std::vector<std::vector<double>>> ConstrTable1(1);
-            std::vector<std::vector<std::vector<double>>> ConstrTable2(1);
-            
-                     std::vector<std::vector<double>> TPairVec1(lcslen, std::vector<double>(2, NAN));
-                     
-                     for(int j = 0; j<CSet1[0].size(); j++){
-                         std::vector<double> TPair1(2, NAN);
-                         TPair1[0] = (TSeqArr1[CSet1[0][j]]);
-                         TPair1[1] = (TSeqDep1[CSet1[0][j]]);
-                         TPairVec1[j] = (TPair1);
-                     }
-                     ConstrTable1[0] = (TPairVec1);
-                 
-                 
-                    std::vector<std::vector<double>> TPairVec2(lcslen, std::vector<double>(2, NAN));
-                     
-                     for(int j = 0; j<CSet2[0].size(); j++){
-                         std::vector<double> TPair2(2, NAN);
-                         TPair2[0] = (TSeqArr2[CSet2[0][j]]);
-                         TPair2[1] = (TSeqDep2[CSet2[0][j]]);
-                         TPairVec2[j] = (TPair2);
-                     }
-                     ConstrTable2[0] = (TPairVec2);
-                 
-            for(int k = 0; k < l; k++){
-            // Assemble the output and end this
-            BestC1.insert(BestC1.end(),ConstrTable1[0].begin(),ConstrTable1[0].end());
-            BestC2.insert(BestC2.end(),ConstrTable2[0].begin(),ConstrTable2[0].end());
-            BestConst[k].push_back(BestC1);
-            BestConst[k].push_back(BestC2);
+        DFSOuter(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen, CGraph2, Keys2[0], Keys2[1], DKey2, Const1_, Const2_, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep);
+
+
+        std::vector<std::string> LCSString = LCSStringify(LCSset[i], lcslen, LocLib);
+        
+        
+                     //End of the loop through each LCS, save the least squares distance through time for each "best constructor" for each LCS
+        for(int k = 0; k < 3; k++){
+            std::vector<std::vector<double>> tOutVec1(lcslen, std::vector<double>(2,NAN));
+            std::vector<std::vector<double>> tOutVec2(lcslen, std::vector<double>(2,NAN));
+            for(int l = 0; l < lcslen; l++){
+                tOutVec1[l][0] = TSeqArr1[BestSet[k][0][l]];
+                tOutVec1[l][1] = TSeqDep1[BestSet[k][0][l]];
+                tOutVec2[l][0] = TSeqArr2[BestSet[k][1][l]];
+                tOutVec2[l][1] = TSeqDep2[BestSet[k][1][l]];
             }
-                
-                for(int i = 0; i<ConstrTable1.size(); i++){
-                    tVec1 = ConstrTable1[i];
+            std::vector<double> OutDissim (lcslen, NAN);
+            double Met = NAN;
+            if(k == 0){
+                for(int l = 0; l<lcslen; l++){
                     
-                    for(int j = 0; j<ConstrTable2.size(); j++){
-                        std::vector<double> DistVec(lcslen, NAN);
-                        std::vector<double> PhaseVec(lcslen, NAN);
-                        std::vector<double> StepVec(lcslen, NAN);
-                        tVec2 = ConstrTable2[j];
-                        
-                        std::vector<double> DiffVec(lcslen, NAN);
-                        double DiffMean;
-                        for(int k = 0; k<ConstrTable1[0].size(); k++){
-                            if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                            DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                            } else {
-                                DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                            }
-                        }
-                        
-                        double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                        DiffMean = DiffSum / (2 * DiffVec.size());
-                        
-                        if(!(DistLUT[CSet1[0][0]][CSet2[0][0]] > 0)){
-                        DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                            DistLUT[CSet1[0][0]][CSet2[0][0]] = DistVec[0];
-                        } else{
-                            DistVec[0] = DistLUT[CSet1[0][0]][CSet2[0][0]];
-                        }
-                        
-                        PhaseVec[0] = (std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
-
-                        StepVec[0] = (0);
-                        
-                        
-                        
-                        for(int k = 1; k<lcslen; k++){
-                            
-                            if(!(DistLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                            DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                DistLUT[CSet1[0][k]][CSet2[0][k]] = DistVec[k];
-                            } else {
-                                DistVec[k] = DistLUT[CSet1[0][k]][CSet2[0][k]];
-                            }
-                            
-                            PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                            
-                            if(!(StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]] > 0)){
-                            StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]] = StepVec[k];
-                            } else {
-                                StepVec[k] = StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]];
-                            }
-                            
-                        }
-                        
-                        BestDist = std::accumulate(DistVec.begin(), DistVec.end(), 0LL);
-
-                        BestPhase = std::accumulate(PhaseVec.begin(), PhaseVec.end(), 0LL);
-
-                        BestStep = std::accumulate(StepVec.begin(), StepVec.end(), 0LL);
-
+                    if(!(DistLUT[BestSet[k][0][l]][BestSet[k][1][l]] > 0)){
+                        OutDissim[l] = ConDist(tOutVec1, tOutVec2, l);;
+                        DistLUT[BestSet[k][0][l]][BestSet[k][1][l]] = OutDissim[l];
+                    } else {
+                        OutDissim[l] = DistLUT[BestSet[k][0][l]][BestSet[k][1][l]];
                     }
                 }
-        } else {
-/*
- 
-    
-         for(int i = 0; i<CSet1.size(); i++){
-                 for(int k = 0; i<CSet2.size(); i++){
-
-                 std::vector<std::vector<double>> TPairVec1;
-
-                 std::vector<std::vector<double>> TPairVec2;
- std::vector<double> DistVec;
- std::vector<double> PhaseVec;
- std::vector<double> StepVec;
-                         for(int j = 0; j<CSet1[0].size(); j++){
-                             std::vector<double> TPair1;
-                             TPair1.push_back(TSeqArr1[CSet1[i][j]]);
-                             TPair1.push_back(TSeqDep1[CSet1[i][j]]);
-                             TPairVec1.push_back(TPair1);
-                             std::vector<double> TPair2;
-                             TPair2.push_back(TSeqArr2[CSet2[k][j]]);
-                             TPair2.push_back(TSeqDep2[CSet2[k][j]]);
-                             TPairVec2.push_back(TPair2);
-                         }
-                 // Evaluation and storage terms here.
-             
-         }}
-         
-
- */
-                    // METHODS DIFFERENTIATION SECTION
-                     
-
-                     if(std::find(Method.begin(), Method.end(), "LeastDist") != Method.end()){
-                         if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                             if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                                 // All three goes here
-                                 BestDist = NAN;
-                                 BestPhase = NAN;
-                                 BestStep = NAN;
-                                 
-                                 for(int i = 0; i<CSet1.size(); i++){
-                                         for(int j = 0; j<CSet2.size(); j++){
-                                             
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> DistVec(lcslen, NAN);
-                                             std::vector<double> PhaseVec(lcslen, NAN);
-                                             std::vector<double> StepVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                             std::vector<double> DiffVec(lcslen, NAN);
-                                             double DiffMean;
-                                             for(int k = 0; k<lcslen; k++){
-                                                 if(!(DiffLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                                 DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                     DiffLUT[CSet1[i][k]][CSet2[j][k]] = DiffVec[k];
-                                                 } else {
-                                                     DiffVec[k] = DiffLUT[CSet1[i][k]][CSet2[j][k]];
-                                                 }
-                                             }
-                                             
-                                             double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                             DiffMean = DiffSum / (2 * DiffVec.size());
-                                             
-                                             if(!(DistLUT[CSet1[i][0]][CSet2[j][0]] > 0)){
-                                             DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                                                 DistLUT[CSet1[i][0]][CSet2[j][0]] = DistVec[0];
-                                             } else{
-                                                 DistVec[0] = DistLUT[CSet1[i][0]][CSet2[j][0]];
-                                             }
-                                             
-                                             PhaseVec[0] = (std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
-                                             
-                                             StepVec[0] = (0);
-                                             
-                                         for(int k = 1; k<lcslen; k++){
-                                             
-                                             if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                                             
-                                             PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                                             
-                                             if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                             StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                                 StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                             } else {
-                                                 StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                             }
-                                         }
-                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                         double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                         if(!(BestDist < CurrDist)){
-                                             BestDist = CurrDist;
-                                             BestConsts[0][0] = i;
-                                             BestConsts[0][1] = j;
-//                                             BestDistVec = DistVec;
-                                         }
-                                         if(!(BestPhase < CurrPhase)){
-                                             BestPhase = CurrPhase;
-                                             BestConsts[1][0] = i;
-                                             BestConsts[1][1] = j;
-//                                             BestPhaseVec = PhaseVec;
-                                         }
-                                         if(!(BestStep < CurrStep)){
-                                             BestStep = CurrStep;
-                                             BestConsts[2][0] = i;
-                                             BestConsts[2][1] = j;
-//                                             BestStepVec = StepVec;
-                                         }
-                                     }
-                                 }
-                             } else {
-                                 // LeastDist and PhaSim goes here
-                                 BestDist = NAN;
-                                 BestPhase = NAN;
-                                 for(int i = 0; i<CSet1.size(); i++){
-                                         for(int j = 0; j<CSet2.size(); j++){
-
-                                             std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                                 std::vector<double> DistVec(lcslen, NAN);
-                                                 std::vector<double> PhaseVec(lcslen, NAN);
-
-                                                     for(int m = 0; m<lcslen; m++){
-                                                         std::vector<double> TPair1(2, NAN);
-                                                         TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                         TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                         tVec1[m] = TPair1;
-                                                         std::vector<double> TPair2(2, NAN);
-                                                         TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                         TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                         tVec2[m] = TPair2;
-                                                     }
-                                                 
-                                                 std::vector<double> DiffVec(lcslen, NAN);
-                                             double DiffMean;
-                                             for(int k = 0; k<lcslen; k++){
-                                                    if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                                                        DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                        DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                                                    } else {
-                                                        DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                                                    }
-                                             }
-                                             
-                                             double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                             DiffMean = DiffSum / (2 * DiffVec.size());
-                                             
-                                             
-                                         for(int k = 0; k<lcslen; k++){
-                                             if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                                             
-                                             PhaseVec[k] = (std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
-                                         }
-                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                         if(!(BestDist < CurrDist)){
-                                             BestDist = CurrDist;
-                                             BestConsts[0][0] = i;
-                                             BestConsts[0][1] = j;
-//                                             BestDistVec = DistVec;
-                                         }
-                                         if(!(BestPhase < CurrPhase)){
-                                             BestPhase = CurrPhase;
-                                             BestConsts[1][0] = i;
-                                             BestConsts[1][1] = j;
-//                                             BestPhaseVec = PhaseVec;
-                                         }
-                                     }
-                                 }
-                             }
-                         } else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                             // LeastDist and LeastStep goes here
-                            BestDist = NAN;
-                            BestStep = NAN;
-                             
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> DistVec(lcslen, NAN);
-                                             std::vector<double> StepVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                         
-                                         if(!(DistLUT[CSet1[0][0]][CSet2[0][0]] > 0)){
-                                         DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                                             DistLUT[CSet1[0][0]][CSet2[0][0]] = DistVec[0];
-                                         } else{
-                                             DistVec[0] = DistLUT[CSet1[0][0]][CSet2[0][0]];
-                                         }
-                                                                                  
-                                         StepVec[0] = (0);
-                                         
-                                     for(int k = 1; k<lcslen; k++){
-                                         if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                                         
-                                         if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                         StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                             StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                         } else {
-                                             StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                         }
-                                     }
-                                     double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                     
-                                     if(!(BestDist < CurrDist)){
-                                         BestDist = CurrDist;
-                                         BestConsts[0][0] = i;
-                                         BestConsts[0][1] = j;
-//                                         BestDistVec = DistVec;
-                                     }
-
-                                     if(!(BestStep < CurrStep)){
-                                         BestStep = CurrStep;
-                                         BestConsts[1][0] = i;
-                                         BestConsts[1][1] = j;
-//                                         BestStepVec = StepVec;
-                                     }
-                                 }
-                             }
-                         } else {
-                      // Just LeastDist goes here
-                      BestDist = NAN;
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> DistVec(lcslen, NAN);
-
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                              for(int k = 0; k<lcslen; k++){
-                                  if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                              }
-                              double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                              if(!(BestDist < CurrDist)){
-                                  BestDist = CurrDist;
-                                  BestConsts[0][0] = i;
-                                  BestConsts[0][1] = j;
-//                                  BestDistVec = DistVec;
-                              }
-                          }
-                      }}
-                         
-                     } else if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                         if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                             // PhaSim and LeastStep goes here
-                              BestPhase = NAN;
-                              BestStep = NAN;
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> PhaseVec(lcslen, NAN);
-                                             std::vector<double> StepVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                             std::vector<double> DiffVec(lcslen, NAN);
-                                         double DiffMean;
-                                         for(int k = 0; k<lcslen; k++){
-                                                if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                                                    DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                    DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                                                } else {
-                                                    DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                                                }
-                                         }
-                                         
-                                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                         DiffMean = DiffSum / (2 * DiffVec.size());
-                                         
-                                         PhaseVec[0] = (std::pow(tVec1[0][0]-tVec2[0][0] - DiffMean, 2)  +  std::pow(tVec1[0][1]-tVec2[0][1] - DiffMean, 2));
-                                         
-                                         StepVec[0] = (0);
-                                         
-                                     for(int k = 1; k<lcslen; k++){
-                                         PhaseVec[k] = (std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
-                                         
-                                         if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                         StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                             StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                         } else {
-                                             StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                         }
-                                     }
-                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                     if(!(BestPhase < CurrPhase)){
-                                         BestPhase = CurrPhase;
-                                         BestConsts[0][0] = i;
-                                         BestConsts[0][1] = j;
-//                                         BestPhaseVec = PhaseVec;
-                                     }
-                                     if(!(BestStep < CurrStep)){
-                                         BestStep = CurrStep;
-                                         BestConsts[1][0] = i;
-                                         BestConsts[1][1] = j;
-//                                         BestStepVec = StepVec;
-                                     }
-                                 }
-                             }
-                         } else{
-                             // Just PhaSim goes here
-                              BestPhase = NAN;
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> PhaseVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                             std::vector<double> DiffVec(lcslen, NAN);
-                                         double DiffMean;
-                                         for(int k = 0; k<lcslen; k++){
-                                                if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                                                    DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                    DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                                                } else {
-                                                    DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                                                }
-                                         }
-                                         
-                                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                         DiffMean = DiffSum / (2 * DiffVec.size());
-                                         
-                                     for(int k = 0; k<lcslen; k++){
-                                         PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                                         
-                                     }
-                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                     if(!(BestPhase < CurrPhase)){
-                                         BestPhase = CurrPhase;
-                                         BestConsts[0][0] = i;
-                                         BestConsts[0][1] = j;
-//                                         BestPhaseVec = PhaseVec;
-                                     }
-                                     }
-                                 }
-                             }
-                     } else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                         // Just LeastStep goes here
-                          BestStep = NAN;
-                         for(int i = 0; i<CSet1.size(); i++){
-                                 for(int j = 0; j<CSet2.size(); j++){
-
-                                     std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                     std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<double> StepVec(lcslen, NAN);
-                                             for(int m = 0; m<lcslen; m++){
-                                                 std::vector<double> TPair1(2, NAN);
-                                                 TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                 TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                 tVec1[m] = TPair1;
-                                                 std::vector<double> TPair2(2, NAN);
-                                                 TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                 TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                 tVec2[m] = TPair2;
-                                             }
-                                     
-                                     StepVec[0] = (0);
-                                     
-                                 for(int k = 1; k<lcslen; k++){
-                                     if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                     StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                         StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                     } else {
-                                         StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                     }
-                                 }
-                                 double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                 if(!(BestStep < CurrStep)){
-                                     BestStep = CurrStep;
-                                     BestConsts[0][0] = i;
-                                     BestConsts[0][1] = j;
-//                                     BestStepVec = StepVec;
-                                 }
-                             }
-                         }
-                         
-                     }
-
-                      // By the end of this loop, we have the two best constructors for each sequence
-
-                      std::vector<std::vector<std::vector<std::vector<double>>>> BestPair(l, std::vector<std::vector<std::vector<double>>>(2));
-                     for(int f = 0; f < l; f++){
-                         // We'd need to build this specific case of Constr Table a lil differently, but it's manageable!
-
-                         
-                             std::vector<std::vector<double>> TPairVec1(lcslen, std::vector<double>(2, NAN));
-                             
-                             for(int j = 0; j<lcslen; j++){
-                                 std::vector<double> TPair1(2, NAN);
-                                 TPair1[0] = (TSeqArr1[CSet1[BestConsts[f][0]][j]]);
-                                 TPair1[1] = (TSeqDep1[CSet1[BestConsts[f][0]][j]]);
-                                 TPairVec1[j] = (TPair1);
-                             }
-                            
-                         
-                         
-                         
-                         std::vector<std::vector<double>> TPairVec2(lcslen, std::vector<double>(2, NAN));
-                             
-                             for(int j = 0; j<CSet2[0].size(); j++){
-                                 std::vector<double> TPair2(2, NAN);
-                                 TPair2[0] = (TSeqArr2[CSet2[BestConsts[f][1]][j]]);
-                                 TPair2[1] = (TSeqDep2[CSet2[BestConsts[f][1]][j]]);
-                                 TPairVec2[j] = (TPair2);
-                             }
-                             
-                         
-                      BestPair[f][0] = (TPairVec1);
-                      BestPair[f][1] = (TPairVec2);
+                    
+            } else if(k == 1){
+                double DiffMeanOut = DiffM(tOutVec1, tOutVec2, BestSet[k][0], BestSet[k][1], DiffLUT);
+                for(int l = 0; l<lcslen; l++){
+                    OutDissim[l] = ConPhase(tOutVec1, tOutVec2, l, DiffMeanOut);
+                }
+                
+            } else if(k == 2){
+                OutDissim[0] = 0;
+                for(int l = 1; l<lcslen; l++){
+                    if(!(StepLUT[BestSet[k][0][l-1]][BestSet[k][0][l]][BestSet[k][1][l-1]][BestSet[k][1][l]] > 0)){
+                        OutDissim[l] = ConStep(tOutVec1, tOutVec2, l);
+                        StepLUT[BestSet[k][0][l-1]][BestSet[k][0][l]][BestSet[k][1][l-1]][BestSet[k][1][l]] = OutDissim[l];
+                    } else {
+                        OutDissim[l] = StepLUT[BestSet[k][0][l-1]][BestSet[k][0][l]][BestSet[k][1][l-1]][BestSet[k][1][l]];
                     }
-                      BestConst = BestPair;
-                 }
-        
-        
-                 std::vector<std::string> LCSString = LCSStringify(LCSset[i], lcslen, LocLib);
-                 
-        std::vector<double> OffVec(l);
-        // Here we can use find() to define OffVec
-        std::vector<double> OffSum(l);
-        if(std::find(Method.begin(), Method.end(), "LeastDist") != Method.end()){
-            if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                    
-
-                    OffVec[0] = BestDist / lcslen;
-
-                    OffVec[1] = BestPhase / lcslen;
-
-                    OffVec[2] = BestStep / lcslen;
-
-                } else {
-
-                    OffVec[0] = BestDist / lcslen;
-
-                    OffVec[1] = BestPhase / lcslen;
-
-                }} else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-
-
-                    OffVec[0] = BestDist / lcslen;
-
-                    OffVec[1] = BestStep / lcslen;
-                    
-                } else {
-
-                    OffVec[0] = BestDist / lcslen;
-
-                }} else if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                    if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-
-                        OffVec[0] = BestPhase / lcslen;
-
-                        OffVec[1] = BestStep / lcslen;
-
-                    } else{
-
-                        OffVec[0] = BestPhase / lcslen;
-
-                    }} else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-
-                        OffVec[0] = BestStep / lcslen;
-        }
-                     //End of the loop through each LCS, save the least squares distance through time for each "best constructor" for each LCS
-        for(int k = 0; k < l; k++){
-
+                }
+            }
             
-                 std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double> CombinedConst = std::make_tuple(LCSString, BestConst[k][0], BestConst[k][1], OffVec[k]);
+            Met = std::accumulate(OutDissim.begin(), OutDissim.end(), 0LL);
+            /*
+            if(!(DistLUT[ Const1[0] ][ Const2[0] ] > 0)){
+                DistVec[0] = ConDist(tVec1, tVec2, 0);
+                DistLUT[Const1[0]][Const2[0]] = DistVec[0];
+            } else{
+                DistVec[0] = DistLUT[Const1[0]][Const2[0]];
+            }
+            
+            PhaseVec[0] = ConPhase(tVec1, tVec2, 0, DiffMean);
+
+            StepVec[0] = (0);
+            
+            if(k == 0){
+                
+            }
+           
+            for(int k = 1; k<Const1.size(); k++){
+                
+                if(!(DistLUT[Const1[k]][Const2[k]] > 0)){
+                    DistVec[k] = ConDist(tVec1, tVec2, k);;
+                    DistLUT[Const1[k]][Const2[k]] = DistVec[k];
+                } else {
+                    DistVec[k] = DistLUT[Const1[k]][Const2[k]];
+                }
+                
+                PhaseVec[k] = ConPhase(tVec1, tVec2, k, DiffMean);
+                
+                if(!(StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] > 0)){
+                    StepVec[k] = ConStep(tVec1, tVec2, k);
+                    StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] = StepVec[k];
+                } else {
+                    StepVec[k] = StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]];
+                }
+                
+            }
+           */
+            
+                 std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double> CombinedConst = std::make_tuple(LCSString, tOutVec1, tOutVec2, Met);
                  
 
             Candidates[k].push_back(CombinedConst);
@@ -1618,13 +878,12 @@ void LCSPrinter2(std::vector<std::tuple<std::vector<std::string>,std::vector<std
 int main(int argc, char** argv){
     //StringVecBuilder(argv, 1, "Switch", "Stop", StringIndex, Fish1Seq_, Fish2Seq_/*,TSeq1,TSeq2*/);
     // Initialize the fishseq_'s and tvec's here:
-    std::vector<std::string> Fish1Seq_ { "Battle_Ck", "SR_JellysFerry", "SR_ChinaRapids", "SR_RedBluff", "SR_BlwRBDD", "SR_AbvThomes", "SR_BlwGCID", "SR_BlwIrvineFinch", "SR_AbvChicoCk", "SR_BlwIrvineFinch", "SR_AbvChicoCk", "SR_OrdBend", "SR_ButteCityBr", "SR_AbvColusaBr", "SR_MeridianBr", "SR_I-80/50Br", "SR_Freeport", "SR_SutterSl", "SR_DCC", "Georg_SloughN", "SR_Ryde", "SR_Mouth", "SR_RioVista", "HorseshoeBend", "Decker_IsS", "Chipps Island", "Benicia Bridge", "Carquinez Bridge", "SR_JellysFerry" };
-    std::vector<std::string> Fish2Seq_ { "Battle_Ck", "SR_JellysFerry", "SR_ChinaRapids", "SR_RedBluff", "SR_AbvThomes", "SR_BlwDryCk", "SR_BlwGCID", "SR_BlwIrvineFinch", "SR_AbvChicoCk", "SR_OrdBend", "SR_ButteCityBr", "SR_AbvColusaBr", "SR_MeridianBr", "SR_I-80/50Br", "SR_Freeport", "SR_SutterSl", "SR_DCC", "Georg_SloughN", "SR_Ryde", "SR_Mouth", "SR_RioVista", "Decker_IsS", "SJ_Antioch", "Chipps Island", "Benicia Bridge", "Carquinez Bridge", "SFPiers", "Golden Gate and Ocean" };
-    std::vector<double> TSeqArr1 { 1178684528, 1180035014, 1180271780, 1180389413, 1180433016, 1180661044, 1181300701, 1181348960, 1181350323, 1181350367, 1181350389, 1181397686, 1181431111, 1181478838, 1181491718, 1181628811, 1181654251, 1181684456, 1181731613, 1181733848, 1181736480, 1181746177, 1181750179, 1181765124, 1181776753, 1181817551, 1181828894, 1181865945, 1190965840 };
-    std::vector<double> TSeqDep1 { 1178685145, 1180048856, 1180313031, 1180398477, 1180433067, 1180669990, 1181302822, 1181349709, 1181350323, 1181350367, 1181365730, 1181398550, 1181431345, 1181478903, 1181491864, 1181629442, 1181659196, 1181723558, 1181732622, 1181733886, 1181737152, 1181746177, 1181752104, 1181771200, 1181810158, 1181819647, 1181860180, 1181876939, 1190965840 };
-    std::vector<double> TSeqArr2 { 1178611017, 1178671176, 1179314049, 1179328730, 1179447575, 1179450368, 1179477827, 1179500487, 1179501829, 1179528125, 1179549840, 1179597976, 1179610230, 1179726034, 1179759130, 1179779044, 1179785144, 1179796087, 1179814662, 1179846596, 1179850894, 1179859637, 1179891851, 1179935241, 1179949563, 1179987350, 1180043662, 1180069755 };
-    std::vector<double> TSeqDep2 { 1178612270, 1178671357, 1179317171, 1179342922, 1179448830, 1179450402, 1179478475, 1179501801, 1179502951, 1179528921, 1179550506, 1179598045, 1179610476, 1179729725, 1179761228, 1179779152, 1179793471, 1179796369, 1179817032, 1179848189, 1179851753, 1179863962, 1179926541, 1179937736, 1179973158, 1179989775, 1180059958, 1188573325 };
-    
+    std::vector<std::string> Fish1Seq_ { "ColemanRel", "Battle_Ck", "SR_JellysFerry", "Battle_Ck", "SR_JellysFerry", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_BoulderHole", "Battle_Ck", "SR_BendBridge", "Battle_Ck", "SR_BendBridge", "Battle_Ck", "SR_BendBridge", "Battle_Ck", "SR_BendBridge", "Battle_Ck", "SR_ChinaRapids", "SR_RedBluff", "SR_BlwRBDD", "SR_SaltCk", "SR_AbvAntelopeCk", "SR_BlwAntelopeCk", "SR_AbvThomes", "SR_AbvToomes", "Woodson Temp", "SR_AbvGCID", "SR_BlwGCID", "SR_BlwIrvineFinch", "SR_AbvOrd", "SR_BlwOrd", "SR_ButteCityBr", "SR_BlwButte", "SR_AbvColusaBr", "SR_AbvTisdale", "SR_BlwChinaBend", "AlcatrazSW", "SR_KnightsLanding", "SR_AbvFeather", "FR_Verona", "SR_I-80/50Br", "SR_GB", "SR_Freeport", "SR_GB", "SR_KK", "SR_BlwSteam", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_BlwGeorgiana", "SR_KK", "SR_RV", "SR_Mouth", "SR_RV", "SR_RioVista", "SR_RV", "SR_RioVista", "SR_RV", "SR_RioVista", "SR_RV", "Decker_IsN", "ThreeMile", "SJ_Antioch", "Chipps Island", "SP_Buoy", "SP_Control", "Richmond Bridge", "Bay Bridge", "Pt_Reyes" };
+    std::vector<std::string> Fish2Seq_ { "ColemanRel", "Battle_Ck", "Massacre Flat", "Battle_Ck", "SR_SturgeonHole", "Battle_Ck", "SR_BendBridge", "Battle_Ck", "SR_ChinaRapids", "SR_RedBluff", "SR_SaltCk", "SR_AbvThomes", "Woodson Temp", "SR_AbvGCID", "SR_BlwGCID", "SR_BlwIrvineFinch", "SR_AbvOrd", "SR_BlwOrd", "SR_AbvOrd", "SR_BlwOrd", "SR_AbvOrd", "SR_BlwOrd", "SR_AbvOrd", "SR_BlwOrd", "SR_AbvOrd", "SR_BlwOrd", "SR_AbvOrd", "SR_BlwOrd", "SR_ButteCityBr", "SR_BlwButte", "SR_AbvColusaBr", "SR_MeridianBr", "SR_AbvTisdale", "SR_BlwChinaBend", "AlcatrazSW", "SR_KnightsLanding", "SR_AbvFeather", "FR_Verona", "SR_I-80/50Br", "SR_GB", "SR_Freeport", "SR_GB", "SR_KK", "SR_BlwSteam", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "Georg_SloughN", "SR_KK", "Georg_SloughN", "SR_KK", "SR_DCC", "Georg_SloughN", "SR_BlwGeorgiana", "SR_KK", "SR_BlwGeorgiana", "SR_KK", "SR_RV", "SR_Mouth", "SR_RV", "SR_SteamboatSl", "SR_RioVista", "SR_RV", "SR_RioVista", "SR_RV", "Decker_IsN", "Decker_IsS", "SJ_Antioch", "Chipps Island", "SJ_Antioch", "SJ_JerseyPoint", "Mok_Will_Berm_Mar", "Mok_GeorgianaS", "Georg_SloughS", "Mok_GeorgianaS", "Georg_SloughS", "Georg_SloughN", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_DCC", "SR_KK", "SR_BlwSteam", "CarSt", "SR_SteamboatSl", "SR_SutterSl", "Miner Slough", "SR_RV", "SR_RioVista", "SR_RV", "SR_RioVista", "SR_RV", "Decker_IsN", "SR_RV", "Decker_IsN", "Decker_IsS", "Chipps Island", "Benicia Bridge", "Carquinez Bridge", "SP_Control", "SP_Array", "SP_Control", "SP_Array", "SP_Control", "SP_Array", "Richmond Bridge", "SP_Array", "SP_Control", "SP_Buoy", "Mare_Island", "SP_Control", "SP_Array", "SP_Flats_Array", "SP_Control", "SP_Buoy", "Mare_Island", "Vallejo Marina" };
+    std::vector<double> TSeqArr1 { 1260974820, 1261035234, 1261184036, 1261184038, 1261184082, 1261184085, 1261190174, 1261190196, 1261190252, 1261190256, 1261190294, 1261190304, 1261190352, 1261190352, 1261190446, 1261190473, 1261190477, 1261190493, 1261190520, 1261190536, 1261190556, 1261190562, 1261190581, 1261190593, 1261190610, 1261190638, 1261190650, 1261190677, 1261191927, 1261192000, 1261198870, 1261198891, 1261198913, 1261198925, 1261198975, 1261199020, 1261199048, 1261199065, 1261209367, 1261217483, 1261225354, 1261228675, 1261309910, 1261311390, 1261374752, 1261381376, 1261387898, 1261642661, 1261646740, 1261671621, 1261870871, 1262023314, 1262229925, 1262549972, 1262584447, 1262662025, 1262710533, 1262745952, 1262750129, 1262770563, 1262776210, 1262867484, 1263585529, 1263605822, 1263609947, 1263646991, 1263659880, 1263692090, 1263692471, 1263692494, 1263692512, 1263692523, 1263692585, 1263692590, 1263692625, 1263692777, 1263692777, 1263692859, 1263692916, 1263693328, 1263694922, 1263697803, 1263779012, 1263782741, 1263785004, 1263792963, 1263794511, 1263803398, 1263803793, 1263918334, 1263937971, 1263959156, 1264030244, 1264259044, 1264308108, 1264532916, 1264534473, 1264539937, 1264557823, 1265309711 };
+    std::vector<double> TSeqDep1 { 1260974820, 1261184004, 1261184036, 1261184038, 1261184082, 1261190173, 1261190196, 1261190222, 1261190252, 1261190256, 1261190294, 1261190304, 1261190352, 1261190439, 1261190446, 1261190473, 1261190477, 1261190514, 1261190520, 1261190536, 1261190556, 1261190562, 1261190581, 1261190593, 1261190610, 1261190638, 1261190650, 1261191913, 1261191961, 1261198865, 1261198870, 1261198891, 1261198913, 1261198973, 1261198975, 1261199020, 1261199048, 1261206855, 1261209655, 1261217829, 1261225354, 1261229116, 1261309910, 1261312156, 1261375536, 1261381428, 1261388782, 1261643397, 1261646933, 1261697227, 1261871140, 1262052352, 1262230831, 1262550277, 1262584595, 1262662025, 1262710624, 1262746174, 1262750129, 1262771090, 1262776287, 1262868075, 1263602741, 1263606352, 1263614463, 1263650678, 1263660810, 1263692455, 1263692471, 1263692494, 1263692512, 1263692523, 1263692585, 1263692590, 1263692744, 1263692777, 1263692777, 1263692859, 1263693117, 1263693328, 1263695151, 1263703992, 1263779519, 1263783498, 1263785085, 1263793239, 1263803174, 1263803639, 1263803958, 1263918334, 1263952487, 1263959324, 1264031220, 1264259044, 1264356251, 1264532916, 1264534523, 1264539937, 1264574214, 1268773232 };
+    std::vector<double> TSeqArr2 { 1260974820, 1261088288, 1261465390, 1261466144, 1261467140, 1261472340, 1261475858, 1261476258, 1261486726, 1261493359, 1261531101, 1261549955, 1261562050, 1261635724, 1261640109, 1261651703, 1261929971, 1261939708, 1261939735, 1261939750, 1261939777, 1261939784, 1261939813, 1261939823, 1261939835, 1261939844, 1261939861, 1261968565, 1262041573, 1262215733, 1262300926, 1262422640, 1262450928, 1262502339, 1262534801, 1262541045, 1262709742, 1262714692, 1262781070, 1262964438, 1263048924, 1263075935, 1263121042, 1263134341, 1263215715, 1263255258, 1263255286, 1263255374, 1263255403, 1263255413, 1263255448, 1263255484, 1263255488, 1263255614, 1263255633, 1263255660, 1263302455, 1263302480, 1263302580, 1263302580, 1263302750, 1263302750, 1263302772, 1263302795, 1263302827, 1263302864, 1263302868, 1263302933, 1263302942, 1263302965, 1263302988, 1263303009, 1263303056, 1263303119, 1263303126, 1263303151, 1263303157, 1263303197, 1263303201, 1263303240, 1263303241, 1263303278, 1263303343, 1263303426, 1263303470, 1263303492, 1263303574, 1263303690, 1263303857, 1263303934, 1263303959, 1263304037, 1263304081, 1263304176, 1263304206, 1263304208, 1263304230, 1263304253, 1263304259, 1263304377, 1263304400, 1263304571, 1263304618, 1263304619, 1263304666, 1263305588, 1263305603, 1263306782, 1263306819, 1263407179, 1263407206, 1263407307, 1263407328, 1263407373, 1263407376, 1263407558, 1263407570, 1263407619, 1263407628, 1263407740, 1263407755, 1263407786, 1263407816, 1263407866, 1263407879, 1263408019, 1263408026, 1263408062, 1263408063, 1263408099, 1263408216, 1263408257, 1263408259, 1263408306, 1263409056, 1263409069, 1263409255, 1263409396, 1263409422, 1263409704, 1263409786, 1263420308, 1263945091, 1263948821, 1264048265, 1264051319, 1264052623, 1264075867, 1264733782, 1264734329, 1264759046, 1264760813, 1264781683, 1264821514, 1264975921, 1265001897, 1265062823, 1265192864, 1265216707, 1265230910, 1265238172, 1265258294, 1265326206, 1265469783, 1265472987, 1265472999, 1265473043, 1265473287, 1265473353, 1265473481, 1265473538, 1265473569, 1265473610, 1265473723, 1265493563, 1265507915, 1265514411, 1265648705, 1265681730, 1265755763, 1265756308, 1265756598, 1265756666, 1265760179, 1265803173, 1265831304, 1265838495, 1265847468, 1265937164, 1266010091, 1266048695, 1266110270, 1266111599, 1266152348, 1266159039, 1266185473, 1266187870, 1266197942, 1266210203, 1266213252, 1266218298, 1266264615, 1266285677, 1266287859, 1266297788, 1266325316, 1266345896, 1266439380, 1266465537 };
+    std::vector<double> TSeqDep2 { 1260974820, 1261450629, 1261465390, 1261466311, 1261467278, 1261473839, 1261475954, 1261476258, 1261487078, 1261493359, 1261531288, 1261550093, 1261562423, 1261636803, 1261640286, 1261652566, 1261939704, 1261939708, 1261939735, 1261939750, 1261939777, 1261939803, 1261939813, 1261939823, 1261939835, 1261939844, 1261954239, 1261969136, 1262042833, 1262216065, 1262301048, 1262448038, 1262450928, 1262502493, 1262535339, 1262541439, 1262710309, 1262715603, 1262781265, 1263045220, 1263058183, 1263081097, 1263123635, 1263158593, 1263255240, 1263255258, 1263255331, 1263255374, 1263255403, 1263255413, 1263255448, 1263255484, 1263255488, 1263255614, 1263255633, 1263302435, 1263302455, 1263302558, 1263302580, 1263302676, 1263302750, 1263302771, 1263302772, 1263302824, 1263302827, 1263302864, 1263302922, 1263302933, 1263302964, 1263302965, 1263302988, 1263303009, 1263303056, 1263303119, 1263303126, 1263303151, 1263303157, 1263303197, 1263303201, 1263303240, 1263303241, 1263303336, 1263303389, 1263303464, 1263303470, 1263303529, 1263303684, 1263303690, 1263303914, 1263303934, 1263304034, 1263304066, 1263304127, 1263304176, 1263304206, 1263304208, 1263304230, 1263304253, 1263304328, 1263304377, 1263304520, 1263304571, 1263304618, 1263304619, 1263305562, 1263305588, 1263306761, 1263306782, 1263407130, 1263407179, 1263407295, 1263407307, 1263407328, 1263407373, 1263407532, 1263407558, 1263407595, 1263407619, 1263407717, 1263407740, 1263407782, 1263407786, 1263407856, 1263407866, 1263407983, 1263408019, 1263408026, 1263408062, 1263408089, 1263408208, 1263408216, 1263408257, 1263408259, 1263408629, 1263409056, 1263409069, 1263409255, 1263409396, 1263409485, 1263409704, 1263416882, 1263943010, 1263946822, 1263953342, 1264049568, 1264051891, 1264053601, 1264688639, 1264734285, 1264756409, 1264760562, 1264771566, 1264803678, 1264897898, 1264987697, 1265051793, 1265100530, 1265192999, 1265220672, 1265231438, 1265238227, 1265281789, 1265387771, 1265472586, 1265472987, 1265472999, 1265473270, 1265473342, 1265473473, 1265473481, 1265473538, 1265473569, 1265473610, 1265475054, 1265493563, 1265511332, 1265514642, 1265663463, 1265742777, 1265756255, 1265756365, 1265756598, 1265756666, 1265795989, 1265805070, 1265832735, 1265839162, 1265893110, 1265937861, 1266011719, 1266096863, 1266111406, 1266116871, 1266156373, 1266166573, 1266186751, 1266190255, 1266197942, 1266212187, 1266213941, 1266218803, 1266267917, 1266285964, 1266289503, 1266300674, 1266340979, 1266360409, 1266440142, 1266466374 };
     std::vector<std::string> Method = {"All"};
     // Methods may include LeastDist, PhaSim, and LeastStep, or All for all three in that order.
     std::vector<std::string> LocLib;
@@ -1788,4 +1047,456 @@ int main(int argc, char** argv){
  std::vector<double> TSeqDep1 {};
  std::vector<double> TSeqArr2 {};
  std::vector<double> TSeqDep2 {};
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Various search algs:
+ 
+ 
+ std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     std::vector<std::vector<int>> CSet;
+     std::vector<int> p(lcslen);
+     std::cout << "The number of nodes visited is: ";
+     std::vector<bool> visited(Graph.size(),false);
+     int NodeInc = 0;
+     for(int i = 0; i < StartKeys.size(); i++){
+             
+             std::stack<int> s;
+             
+             s.push(StartKeys[i]);
+         
+             while(!s.empty()){
+                 //std::cout << "The stack is: " << s.size() << " elements long.\n";
+                 int Curr = s.top();
+                 s.pop();
+                 auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
+                 
+                 int Depth = DKey[1][dInd - DKey[0].begin()];
+                 
+                 
+                 if(visited[Curr]){
+                     //std::cout << "The most recent node revisited is: " <<Curr << "\n";
+                    // Let's add the crazy shit
+                     std::vector<std::vector<int>> VecSub;
+                     for(int j = 0; j < CSet.size(); j++){
+                         if(CSet[j][Depth] == Curr){
+                             std::vector<int> Twig;
+                             
+                             for(int k = Depth; k < lcslen; k++){
+                                 Twig.push_back(CSet[j][k]);
+                             }
+                             VecSub.push_back(Twig);
+                         }
+                     }
+ //Switch to using std::unique here
+                     
+                     std::sort(VecSub.begin(),VecSub.end());
+                     
+                     VecSub.erase(std::unique(VecSub.begin(),VecSub.end()),VecSub.end());
+                     
+                     
+                     for(int j = 0; j < VecSub.size(); j++){
+                         for(int k = Depth; k < lcslen; k++){
+                             p[k] = VecSub[j][(k - Depth)];
+                         }
+                         CSet.push_back(p);
+                     }
+                     
+                 } else {
+                     NodeInc++;
+                     std::cout << NodeInc << " ";
+                     //std::cout << "The most recent new node visited is: " <<Curr << "\n";
+                     
+                     visited[Curr] = true;
+                     p[Depth] = Curr;
+                 
+                     if(Depth == (lcslen-1)){
+                         CSet.push_back(p);
+                     
+                     } else {
+                 
+                 for(int k = 0; k < Graph[Curr].size(); k++){
+                     s.push(Graph[Curr][k]);
+                 }
+                 }
+                 }
+             }
+         
+     }
+     return CSet;
+ }
+
+ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     std::vector<std::vector<int>> CSet;
+     std::vector<int> p(lcslen);
+     //std::cout << "The number of nodes visited is: ";
+     //std::vector<bool> visited(Graph.size(),false);
+     //int NodeInc = 0;
+     int MaxDepth = lcslen - 1;
+     for(int i = 0; i < StartKeys.size(); i++){
+             
+             std::stack<int> s;
+             
+             s.push(StartKeys[i]);
+         
+             while(!s.empty()){
+                 //std::cout << "The stack is: " << s.size() << " elements long.\n";
+                 int Curr = s.top();
+                 s.pop();
+ //                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
+ //
+ //                int Depth = DKey[1][dInd - DKey[0].begin()];
+                 int Depth = DKey[1][Curr];
+                 
+                
+                     //NodeInc++;
+                     //std::cout << NodeInc << " ";
+                     //std::cout << "The most recent new node visited is: " <<Curr << "\n";
+                     
+                     //visited[Curr] = true;
+                     p[Depth] = Curr;
+                 
+                     if(Depth == MaxDepth){
+                         CSet.push_back(p);
+                     
+                     } else {
+                 
+                 for(int k = 0; k < Graph[Curr].size(); k++){
+                     s.push(Graph[Curr][k]);
+                 }
+                 }
+                 }
+             }
+         
+     
+     return CSet;
+ }
+ std::vector<std::vector<int>> DnCSub(std::vector<std::vector<int>> Graph, std::vector<std::vector<int>> DKey, int MaxDepth, int MinDepth){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     std::vector<std::vector<int>> CSet;
+     std::vector<std::vector<std::vector<int>>> EdgeTree(2);
+
+     int F1;
+     int F2;
+     if(MaxDepth % 2 == 0){
+         F1 = 0;
+         F2 = 1;
+     } else {
+         F1 = 1;
+         F2 = 0;
+     }
+     std::vector<int> LeafHolder(1);
+     for(int i = 0; i < DKey[1].size(); i++){
+         if(DKey[1][i] == MaxDepth){
+             LeafHolder[0] = DKey[0][i];
+             EdgeTree[F1].push_back(LeafHolder);
+         }
+     }
+     for(int i = (MaxDepth - 1); i > (MinDepth - 1); i--){
+         //std::cout << "The current depth being evaluated is: " << i + 1 << "\n";
+         //Set flags to alternate objects
+         if(i % 2 == 0){
+             F1 = 0;
+             F2 = 1;
+         } else {
+             F1 = 1;
+             F2 = 0;
+         }
+
+         std::vector<int> DepKey;
+
+         for(int j = 0; j < DKey[1].size(); j++){
+             if(DKey[1][j] == i){
+                 DepKey.push_back(DKey[0][j]);
+             }
+         }
+         EdgeTree[F1].clear();
+         // Now we have a flagset & a set of nodes at this depth
+         for(int j = 0; j < DepKey.size(); j++){
+             int CurrNode = DepKey[j];
+             std::vector<int> AdjVec = Graph[DepKey[j]];
+             for(int k = 0; k < AdjVec.size(); k++){
+                 int CurrChild = AdjVec[k];
+                 // For each of these points, there will be one or more sets of "existing" paths
+                 std::vector<int> PathVec;
+                 for(int l = 0; l < EdgeTree[F2].size(); l++){
+                     if(EdgeTree[F2][l][0] == CurrChild){
+                         PathVec.push_back(l);
+                     }
+                 }
+
+                 // Now we have a vector of keys as to which paths we can append.
+                 if(PathVec.size() > 0){
+                     EdgeTree[F1].reserve(EdgeTree[F1].size() + PathVec.size());
+                 for(int l = 0; l < PathVec.size(); l++){
+                     std::vector<int> Path(1, CurrNode);
+                     Path.reserve(MaxDepth - i);
+                     Path.insert(Path.begin()+1,EdgeTree[F2][l].begin(),EdgeTree[F2][l].end());
+                     Path.shrink_to_fit();
+                     EdgeTree[F1].push_back(Path);
+                 }} else {
+                     std::vector<int> Path(1, CurrNode);
+                     EdgeTree[F1].push_back(Path);
+                 }
+
+             }
+         }
+
+     }
+     // At the end, EdgeTree[F1] contains every path from root to leaf as a vector, so we need to pull only those of appropriate length
+     int PathLength = MaxDepth - MinDepth + 1;
+     
+     for(int i = 0; i < EdgeTree[F1].size(); i++){
+         if(EdgeTree[F1][i].size() == (PathLength)){
+             CSet.push_back(EdgeTree[F1][i]);
+         }
+     }
+
+     return CSet;
+ }
+
+ std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     int PartDex = 5;
+     std::vector<std::vector<int>> CSet;
+     int MaxDepth = (lcslen - 1);
+     int dodec = std::ceil((MaxDepth + 1) / PartDex);
+     int end = dodec-1;
+     std::cout << dodec << " is the number of partitions to be included in the constructor set.\nThe current number of partitions evaluated is: ";
+     
+     std::vector<std::vector<std::vector<int>>> PathComp(dodec);
+     for(int i = 0; i < end; i++){
+         std::vector<std::vector<int>> Parti;
+         int lB = i*PartDex;
+         int uB = (i+1)*PartDex;
+         
+         Parti = DnCSub(Graph, DKey, uB, lB);
+         std::cout << i + 1 << " ";
+         
+         
+         PathComp[i] = Parti;
+     }
+     int lB = end*PartDex;
+     int uB = MaxDepth;
+     
+     PathComp[end] = DnCSub(Graph, DKey, uB, lB);
+     std::cout << dodec << "\n";
+     std::vector<std::vector<int>> Ends(dodec);
+     std::vector<std::vector<int>> Starts(dodec);
+ //    for(int i = 0; i < PathComp[0].size(); i++){
+ //        CSet.push_back(PathComp[0][i]);
+ //        Starts[0][i] = CSet[i][0];
+ //        Ends[0][i] = CSet[i][19];
+ //    }
+     
+     for(int i = 0; i < end; i++){
+         for(int j = 0; j < PathComp[i].size(); j++){
+             Starts[i].push_back(PathComp[i][j][0]);
+             Ends[i].push_back(PathComp[i][j][PartDex]);
+         }
+     }
+     
+     for(int j = 0; j < PathComp[end].size(); j++){
+         Starts[end].push_back(PathComp[end][j][0]);
+         Ends[end].push_back(PathComp[end][j][uB - lB]);
+     }
+     
+     std::vector<std::vector<std::vector<int>>> PathEdges(end);
+     for(int i = 0; i < end; i++){
+         std::vector<std::vector<int>> EdgeKeys;
+         for(int j = 0; j < Ends[i].size(); j++){
+             std::vector<int> EdgeVec;
+             int EndPoint = Ends[i][j];
+             std::vector<int> StartSet = Starts[i+1];
+             for(int k = 0; k < Starts[i + 1].size(); k++){
+                 if(StartSet[k] == EndPoint){
+                     EdgeVec.push_back(k);
+                 }
+             }
+             EdgeKeys.push_back(EdgeVec);
+         }
+         PathEdges[i] = EdgeKeys;
+     }
+     
+ //    for(int i = 0; i < PathComp[0].size(); i++){
+ //        CSet.push_back(PathComp[0][i]);
+ //        Starts[0][i] = CSet[i][0];
+ //        Ends[0][i] = CSet[i][19];
+ //    }
+     // Okay, how do I keep this from being completely goddamn useless?
+     std::vector<std::vector<std::vector<std::vector<int>>>> DdexPaths(2);
+     int F1;
+     int F2;
+ //    int incr = 0;
+     for(int i = 0; i < PathComp[0].size(); i++){
+         std::vector<std::vector<int>> Plug = {PathComp[0][i]};
+         DdexPaths[0].push_back(Plug);
+     }
+     
+     std::cout << "The current number of partitions in the constructor set is: 1 ";
+     
+     for(int i = 1; i < dodec; i++){
+         if(i % 2 == 0){
+             F1 = 0;
+             F2 = 1;
+         } else {
+             F1 = 1;
+             F2 = 0;
+         }
+         int Pathdex = i-1;
+         std::vector<int> EndSet = Ends[Pathdex];
+         std::vector<int> StartSet = Starts[i];
+         std::vector<std::vector<std::vector<int>>> DexSubPaths;
+         for(int j = 0; j < EndSet.size(); j++){
+             std::vector<std::vector<int>> PathSet;
+             //std::vector<int> BasePath = DdexPaths[F2][j][0];
+             int End = EndSet[j];
+             // Do some work here
+             for(int k = 0; k < StartSet.size(); k++){
+                 if(StartSet[k] == End){
+                     std::vector<std::vector<int>> PathSub = DdexPaths[F2][j];
+                     std::vector<int> AddPath = PathComp[i][k];
+                     for(int l = 0; l < PathSub.size(); l++){
+                         std::vector<int> BasePath = PathSub[l];
+                         BasePath.insert(BasePath.end(),AddPath.begin() + 1,AddPath.end());
+                         PathSet.push_back(BasePath);
+                     }
+                 }
+                 
+                 DexSubPaths.push_back(PathSet);
+             }
+         }
+         DdexPaths[F1] = DexSubPaths;
+         std::cout << i + 1 << " ";
+     }
+     // At the end of the loop, F1 is the one we want to unravel into each constructor
+     for(int i = 0; i < DdexPaths[F1].size(); i++){
+         for(int j = 0; j < DdexPaths[F1][i].size(); j++){
+             CSet.push_back(DdexPaths[F1][i][j]);
+         }
+     }
+     std::cout << "\n";
+     return CSet;
+ }
+ //
+ std::vector<std::vector<int>> AllPathsInvert(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     std::vector<std::vector<int>> CSet;
+     std::vector<std::vector<std::vector<int>>> EdgeTree(2);
+
+     int MaxDepth = *std::max_element(DKey[1].begin(),DKey[1].end());
+     int F1;
+     int F2;
+     if(MaxDepth % 2 == 0){
+         F1 = 0;
+         F2 = 1;
+     } else {
+         F1 = 1;
+         F2 = 0;
+     }
+     std::vector<int> LeafHolder(1);
+     for(int i = 0; i < DKey[1].size(); i++){
+         if(DKey[1][i] == MaxDepth){
+             LeafHolder[0] = DKey[0][i];
+             EdgeTree[F1].push_back(LeafHolder);
+         }
+     }
+     for(int i = (MaxDepth - 1); i > -1; i--){
+         //std::cout << "The current depth being evaluated is: " << i + 1 << "\n";
+         //Set flags to alternate objects
+         if(i % 2 == 0){
+             F1 = 0;
+             F2 = 1;
+         } else {
+             F1 = 1;
+             F2 = 0;
+         }
+
+         std::vector<int> DepKey;
+
+         for(int j = 0; j < DKey[1].size(); j++){
+             if(DKey[1][j] == i){
+                 DepKey.push_back(DKey[0][j]);
+             }
+         }
+         EdgeTree[F1].clear();
+         // Now we have a flagset & a set of nodes at this depth
+         for(int j = 0; j < DepKey.size(); j++){
+             int CurrNode = DepKey[j];
+             std::vector<int> AdjVec = Graph[DepKey[j]];
+             for(int k = 0; k < AdjVec.size(); k++){
+                 int CurrChild = AdjVec[k];
+                 // For each of these points, there will be one or more sets of "existing" paths
+                 std::vector<int> PathVec;
+                 for(int l = 0; l < EdgeTree[F2].size(); l++){
+                     if(EdgeTree[F2][l][0] == CurrChild){
+                         PathVec.push_back(l);
+                     }
+                 }
+
+                 // Now we have a vector of keys as to which paths we can append.
+                 if(PathVec.size() > 0){
+                     EdgeTree[F1].reserve(EdgeTree[F1].size() + PathVec.size());
+                 for(int l = 0; l < PathVec.size(); l++){
+                     std::vector<int> Path(1, CurrNode);
+                     Path.reserve(MaxDepth - i);
+                     Path.insert(Path.begin()+1,EdgeTree[F2][l].begin(),EdgeTree[F2][l].end());
+                     Path.shrink_to_fit();
+                     EdgeTree[F1].push_back(Path);
+                 }} else {
+                     std::vector<int> Path(1, CurrNode);
+                     EdgeTree[F1].push_back(Path);
+                 }
+
+             }
+         }
+
+     }
+     // At the end, EdgeTree[F1] contains every path from root to leaf as a vector, so we need to pull only those of length == MaxDepth
+     for(int i = 0; i < EdgeTree[F1].size(); i++){
+         if(EdgeTree[F1][i].size() == (MaxDepth+1)){
+             CSet.push_back(EdgeTree[F1][i]);
+         }
+     }
+
+     return CSet;
+ }
+
  */

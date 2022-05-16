@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   uuid = "2A7B2C4A-D122-4C44-9066-3791E9414982"
+   type = "1"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "22289D63-6D6F-48CB-913C-65DAD4CD9655"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../NatLCSRestruct/NatLCSRestruct/main.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "506"
+            endingLineNumber = "506"
+            landmarkName = "unknown"
+            landmarkType = "0">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "59D3337E-AB74-4FD1-B153-5915B47CB6BF"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../NatLCSRestruct/NatLCSRestruct/main.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "682"
+            endingLineNumber = "682"
+            landmarkName = "LCSConstructHunt(LCSset, Fish1Seq, Fish2Seq, PullSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Method, LocLib, lcslen, Size1, Size2)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "927121E8-05C9-40B0-B680-A3C317B97900"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../NatLCSRestruct/NatLCSRestruct/main.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "685"
+            endingLineNumber = "685"
+            landmarkName = "LCSConstructHunt(LCSset, Fish1Seq, Fish2Seq, PullSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Method, LocLib, lcslen, Size1, Size2)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B561416C-B4DC-417C-8373-571C958C9891"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../NatLCSRestruct/NatLCSRestruct/main.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "292"
+            endingLineNumber = "292"
+            landmarkName = "BestConsts(Const1, Const2, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "EBDE3BF2-2C0A-47B4-BBC4-DCE61BD90FBB"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../NatLCSRestruct/NatLCSRestruct/main.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "359"
+            endingLineNumber = "359"
+            landmarkName = "BestConsts(Const1, Const2, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep)"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  uuid = "EBDE3BF2-2C0A-47B4-BBC4-DCE61BD90FBB - 78cdf5b5f37fe5ad"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "BestConsts(std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt; &gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, double&amp;, double&amp;, double&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt; &gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, double&amp;, double&amp;, double&amp;)"
+                  moduleName = "NatLCSRestruct"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Code/NatLCSRestruct/NatLCSRestruct/main.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "360"
+                  endingLineNumber = "360"
+                  offsetFromSymbolStart = "636">
+               </Location>
+               <Location
+                  uuid = "EBDE3BF2-2C0A-47B4-BBC4-DCE61BD90FBB - 78cdf5b5f37fe5ad"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "BestConsts(std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt; &gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, double&amp;, double&amp;, double&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt; &gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, double&amp;, double&amp;, double&amp;)"
+                  moduleName = "NatLCSRestruct"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Code/NatLCSRestruct/NatLCSRestruct/main.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "360"
+                  endingLineNumber = "360"
+                  offsetFromSymbolStart = "1209">
+               </Location>
+               <Location
+                  uuid = "EBDE3BF2-2C0A-47B4-BBC4-DCE61BD90FBB - 78cdf5b5f37fe5ad"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "BestConsts(std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;int, std::__1::allocator&lt;int&gt; &gt; &gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, double&amp;, double&amp;, double&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;, std::__1::allocator&lt;std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt; &gt; &gt; &gt; &gt; &gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, std::__1::vector&lt;double, std::__1::allocator&lt;double&gt; &gt;&amp;, double&amp;, double&amp;, double&amp;)"
+                  moduleName = "NatLCSRestruct"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Code/NatLCSRestruct/NatLCSRestruct/main.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "360"
+                  endingLineNumber = "360"
+                  offsetFromSymbolStart = "2048">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>

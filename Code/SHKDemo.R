@@ -135,9 +135,15 @@ par(mfrow=c(1,1))
 
 length(which(PopTest[[3]][[4]][,2] < PopTest[[1]][4,2]))
 min(PopTest[[3]][[4]][,2])
+mean(PopTest[[3]][[1]])
 
+hist(1/PopTest[[3]][[1]][,1], breaks = 200, main = NULL, xlab = NULL, ylab = NULL)
+abline(v = 1/PopTest[[1]][1,1], col = "Red", lwd = 2)
+text(x = 1/PopTest[[1]][1,1] + 2E-11, y = 350, col = "Red", cex = 4, labels = paste("p = ", mean(PopTest[[3]][[1]][,1] < PopTest[[1]][1,1])))
 
-
+hist(1/PopTest[[3]][[1]][,3], breaks = 200, main = NULL, xlab = NULL, ylab = NULL)
+abline(v = 1/PopTest[[1]][1,3], col = "Red", lwd = 2)
+text(x = 1/PopTest[[1]][1,3] + 1E-11, y = 350, col = "Red", cex = 4, labels = paste("p = ", mean(PopTest[[3]][[1]][,3] < PopTest[[1]][1,3])))
 
 SteelDemLDMat<-matrix(nrow = 16, ncol = 16)
 rownames(SteelDemLDMat) <- SteelDemSub

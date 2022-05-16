@@ -2,8 +2,13 @@
 ColemanDets<-read.csv("Data/ColemanRel.csv")
 Rels<-read.csv("Data/Releases.csv")
 FalseDets<-read.csv("Data/Cull.csv")
+Locs69kHz<-read.csv("Data/69kHzLocs.csv")
+
 
 # Also make a table pairing location and general location for this
+
+
+
 
 SHKLocs<-unique(SHK$DetectionLocation)
 ColeLocs<-unique(ColemanDets$Location_name)
@@ -19,7 +24,8 @@ for(i in 1:length(SHKLocs)){
   }
 }
 
-ColeLocTable<-matrix(data = NA, nrow = length(ColeLocs), ncol = 2)
+ColeLocTable<-matrix(data = NA, nrow = length(ColeLocs), ncol = 4)
+colnames(ColeLocTable)<-c("GenLoc","SpecLoc","Lat","Lon")
 for(i in 1:length(ColeLocs)){
   ColeLocTable[i,2] <- ColeLocs[i]
   MatchKey<-which(ColeLocs[i] == GenLocTable[,2])
@@ -39,7 +45,7 @@ ColeLocTable[89,1] <- "Woodson Temp"
 ColeLocTable[c(56,62),1] <- "Tower Bridge"
 ColeLocTable[c(268,111,267,223,270,271,274,273,275,262,272,269),1] <- rep_len("SR_SRWTPD",12)
 ColeLocTable[c(124,127,142,136,141,134),1] <- rep_len("SR_RV",6)
-ColeLocTable[c(258,259,260,255,254,256,257,265,264,243,245,241,242,244,248,246,250,247,249,252,253,251,124,127,142),1] <- rep_len("SR_RM",15)
+ColeLocTable[c(258,259,260,255,254,256,257,265,264,243,245,241,242,244,248,246,250,247,249,252,253,251,124,127,142),1] <- rep_len("SR_RM",25)
 ColeLocTable[292,1] <- "Riverview Marina"
 ColeLocTable[100,1] <- "SR_MeridianBr"
 ColeLocTable[91,1] <- "Massacre Flat"
@@ -105,6 +111,39 @@ GGBdex<-which(ColeLocTable[,1] %in% GGBvec)
 
 ColeLocTable[GGBdex,1]<-"Golden Gate and Ocean"
 
+
+RepVec<-c("SR_KK")
+
+Repdex<-which(ColeLocTable[,1] %in% RepVec)
+
+ColeLocTable <- ColeLocTable[-Repdex,]
+
+
+
+
+
+RepVec<-c("Decker_IsN", "Decker_IsS", "Horseshoe_Bend")
+
+Repdex<-which(ColeLocTable[,1] %in% RepVec)
+
+ColeLocTable[Repdex,1]<-"Decker and Horseshoe"
+
+
+for(i in 1:length(ColeLocTable[,2])){
+  Key <- which(Locs69kHz[,1] %in% ColeLocTable[i,2])
+  if(length(Key) != 0){
+  ColeLocTable[i,3] <- Locs69kHz[Key,2]
+  ColeLocTable[i,4] <- Locs69kHz[Key,3]
+  }
+}
+
+CheckVec <- c("SR_DCC", "SR_KK", "Battle_Ck", "SR_SturgeonHole", "Decker_IsN", "Decker_IsS", "Horseshoe_Bend")
+
+CheckSub <- ColeLocTable[ColeLocTable[,1] %in% CheckVec,]
+
+write.csv(CheckSub,"Data/CoordsForGabe.csv")
+write.csv(ColeLocTable, "Data/FullLocs.csv")
+ColeLocTable <- read.csv("Data/GenLocsQedFIN.csv")
 # Let's check wet years first, then dry years?
 
 Rels<-Rels[order(Rels$Total_tagged_released, decreasing = T),]
@@ -148,15 +187,33 @@ GenLocTable<-rbind(GenLocTable, c("ColemanRel","BtlCkCNFHWeir"))
 # Let's adjust ColemanSub to match the locations as indicated in the GenLocTable
 
 for(i in 1:length(ColeLocTable[,2])){
-  Site <- ColeLocTable[i,1]
-  Key <- which(ColemanSub$Location_name %in% ColeLocTable[i,2])
+  Site <- ColeLocTable[i,2]
+  Key <- which(ColemanSub$Location_name %in% ColeLocTable[i,3])
   ColemanSub$Location_name[Key] <- rep_len(Site, length(Key))
 }
 
+# And here's where we'll adjust the one SP_Array site we missed and remove the KK sites.
+# As well as overwrite and bin the Decker & Horseshoe sites after all.
+KK_Sites <- c("SR_KK345R", "SR_KK269L", "SR_KK250L", "SR_KK240L")
+KK_Key <- which(ColemanSub$Location_name %in% KK_Sites)
+ColemanSub <- ColemanSub[-KK_Key,]
 
+SP_Key <- which(ColemanSub$Location_name == "SP_Array_2F")
+ColemanSub$Location_name[SP_Key] <- "SP_Array"
+
+BC3_Key <- which(ColemanSub$Location_name == "BattleCk03")
+ColemanSub$Location_name[BC3_Key] <- "Upper_Battle_Ck"
+
+DH_Sites <- c("Decker and Horseshoe SW", "Decker and Horseshoe N","Decker and Horseshoe M")
+DH_Key <- which(ColemanSub$Location_name %in% DH_Sites)
+ColemanSub$Location_name[DH_Key] <- "Decker and Horseshoe"
 
 CNFHChinDense<-DetCondense(ColemanSub, ColemanIDsVec, "Location_name", "Detect_date_time", "Fish_ID")
 
+# Need to drop "LFC3077" from the second of the releases for now
+ProblemFish <- c("LFC3077", "LFC3147", "LFC3093")
+ProblemKey <- which(ColemanIDs[[2]] %in% ProblemFish)
+ColemanIDs[[2]] <- ColemanIDs[[2]][-ProblemKey]
 
 ColemanPairs<-list()
 for(k in 1:length(ColemanIDs)){
@@ -173,15 +230,174 @@ for(k in 1:length(ColemanIDs)){
   ColemanPairs[[k]] <- RelPairs
 }
 
+ColemanPairs[[2]][2118,]
+DebugCole(2,2118)
+
 CNFHChinDense$FirstDet<-as.numeric(as.POSIXct(CNFHChinDense$FirstDet))
 CNFHChinDense$LastDet<-as.numeric(as.POSIXct(CNFHChinDense$LastDet))
+CNFHChinDense<-na.omit(CNFHChinDense)
 
-
+source("Code/Functions/LCSCalc.R")
 Rcpp::sourceCpp("Code/Functions/FullLCSExtractor.cpp")
 
+#LCSCalc(CNFHChinDense, ColemanPairs[[2]][1,])
+
+
 LCSCole101<-LCSCalc(CNFHChinDense, ColemanPairs[[1]])
+saveRDS(LCSCole101, "Data/LCSCole101.rds")
 LCSCole09<-LCSCalc(CNFHChinDense, ColemanPairs[[2]])
+saveRDS(LCSCole09, "Data/LCSCole09.rds")
 LCSCole102<-LCSCalc(CNFHChinDense, ColemanPairs[[3]])
+saveRDS(LCSCole102, "Data/LCSCole102.rds")
+
+
+ColeTable101<-MarkovFishTable(CNFHChinDense[CNFHChinDense$FishID %in% ColemanIDs[[1]],], "FishID", "Loc", "FirstDet","LastDet")
+saveRDS(ColeTable101, "Data/ColeTable101.rds")
+ColeTable09<-MarkovFishTable(CNFHChinDense[CNFHChinDense$FishID %in% ColemanIDs[[2]],], "FishID", "Loc", "FirstDet","LastDet")
+saveRDS(ColeTable09, "Data/ColeTable09.rds")
+ColeTable102<-MarkovFishTable(CNFHChinDense[CNFHChinDense$FishID %in% ColemanIDs[[3]],], "FishID", "Loc", "FirstDet","LastDet")
+saveRDS(ColeTable102, "Data/ColeTable102.rds")
+
+# Leaving Cole101Surr at 10000 fish for now, but I'll switch it over to 1000 later when I can rerun everything.
+Cole101Surr<-MarkovFishSurrogates(ColeTable101, "BtlCkCNFHWeir",0,10000,Reps = 1)
+#unique(Cole101Surr[[1]][,"FishVec"])
+saveRDS(Cole101Surr, "Data/Cole101Surr.rds")
+Cole09Surr<-MarkovFishSurrogates(ColeTable09, "BtlCkCNFHWeir",0,1000,Reps = 1)
+saveRDS(Cole09Surr, "Data/Cole09Surr.rds")
+Cole102Surr<-MarkovFishSurrogates(ColeTable102, "BtlCkCNFHWeir",0,1000,Reps = 1)
+saveRDS(Cole102Surr, "Data/Cole102Surr.rds")
+#library(wsyn)
+Cole101PopTest<-MFPop(LCSCole101, ColemanPairs[[1]], Cole101Surr[[1]],100)
+saveRDS(Cole101PopTest, "Data/Cole101PopTest.rds")
+Cole101PopTest <- readRDS("Data/Cole101PopTest.rds")
+Cole09PopTest<-MFPop(LCSCole09, ColemanPairs[[2]], Cole09Surr[[1]],100)
+saveRDS(Cole09PopTest, "Data/Cole09PopTest.rds")
+Cole102PopTest<-MFPop(LCSCole102, ColemanPairs[[3]], Cole102Surr[[1]],100)
+saveRDS(Cole102PopTest, "Data/Cole102PopTest.rds")
+Cole102PopTest <- readRDS("Data/Cole102PopTest.rds")
+
+
+pdf("Intermediate stuff/Cole101SurrHists.pdf")
+
+par(mfrow = c(3,3))
+hist(Cole101PopTest[[3]][[1]][,1], breaks = 10, main = "Surrogate Euclid Mean")
+abline(v = Cole101PopTest[[1]][1,1], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[1]][,2], breaks = 10, main = "Surrogate Phase Mean")
+abline(v = Cole101PopTest[[1]][1,2], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[1]][,3], breaks = 10, main = "Surrogate Stepwise Mean")
+abline(v = Cole101PopTest[[1]][1,3], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[3]][,1], breaks = 10, main = "Surrogate Euclid 90th quantile")
+abline(v = Cole101PopTest[[1]][3,1], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[3]][,2], breaks = 10, main = "Surrogate Phase 90th quantile")
+abline(v = Cole101PopTest[[1]][3,2], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[3]][,3], breaks = 10, main = "Surrogate Stepwise 90th quantile")
+abline(v = Cole101PopTest[[1]][3,3], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[4]][,1], breaks = 10, main = "Surrogate Euclid 10th quantile")
+abline(v = Cole101PopTest[[1]][4,1], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[4]][,2], breaks = 10, main = "Surrogate Phase 10th quantile")
+abline(v = Cole101PopTest[[1]][4,2], col = "Red", lwd = 2)
+hist(Cole101PopTest[[3]][[4]][,3], breaks = 10, main = "Surrogate Stepwise 10th quantile")
+abline(v = Cole101PopTest[[1]][4,3], col = "Red", lwd = 2)
+
+dev.off()
+par(mfrow=c(1,1))
+
+
+pdf("Intermediate stuff/Cole09SurrHists.pdf")
+
+par(mfrow = c(3,3))
+hist(Cole09PopTest[[3]][[1]][,1], breaks = 10, main = "Surrogate Euclid Mean")
+abline(v = Cole09PopTest[[1]][1,1], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[1]][,2], breaks = 10, main = "Surrogate Phase Mean")
+abline(v = Cole09PopTest[[1]][1,2], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[1]][,3], breaks = 10, main = "Surrogate Stepwise Mean")
+abline(v = Cole09PopTest[[1]][1,3], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[3]][,1], breaks = 10, main = "Surrogate Euclid 90th quantile")
+abline(v = Cole09PopTest[[1]][3,1], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[3]][,2], breaks = 10, main = "Surrogate Phase 90th quantile")
+abline(v = Cole09PopTest[[1]][3,2], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[3]][,3], breaks = 10, main = "Surrogate Stepwise 90th quantile")
+abline(v = Cole09PopTest[[1]][3,3], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[4]][,1], breaks = 10, main = "Surrogate Euclid 10th quantile")
+abline(v = Cole09PopTest[[1]][4,1], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[4]][,2], breaks = 10, main = "Surrogate Phase 10th quantile")
+abline(v = Cole09PopTest[[1]][4,2], col = "Red", lwd = 2)
+hist(Cole09PopTest[[3]][[4]][,3], breaks = 10, main = "Surrogate Stepwise 10th quantile")
+abline(v = Cole09PopTest[[1]][4,3], col = "Red", lwd = 2)
+
+dev.off()
+par(mfrow=c(1,1))
+
+
+pdf("Intermediate stuff/Cole102SurrHists.pdf")
+
+par(mfrow = c(3,3))
+hist(Cole102PopTest[[3]][[1]][,1], breaks = 10, main = "Surrogate Euclid Mean")
+abline(v = Cole102PopTest[[1]][1,1], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[1]][,2], breaks = 10, main = "Surrogate Phase Mean")
+abline(v = Cole102PopTest[[1]][1,2], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[1]][,3], breaks = 10, main = "Surrogate Stepwise Mean")
+abline(v = Cole102PopTest[[1]][1,3], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[3]][,1], breaks = 10, main = "Surrogate Euclid 90th quantile")
+abline(v = Cole102PopTest[[1]][3,1], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[3]][,2], breaks = 10, main = "Surrogate Phase 90th quantile")
+abline(v = Cole102PopTest[[1]][3,2], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[3]][,3], breaks = 10, main = "Surrogate Stepwise 90th quantile")
+abline(v = Cole102PopTest[[1]][3,3], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[4]][,1], breaks = 10, main = "Surrogate Euclid 10th quantile")
+abline(v = Cole102PopTest[[1]][4,1], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[4]][,2], breaks = 10, main = "Surrogate Phase 10th quantile")
+abline(v = Cole102PopTest[[1]][4,2], col = "Red", lwd = 2)
+hist(Cole102PopTest[[3]][[4]][,3], breaks = 10, main = "Surrogate Stepwise 10th quantile")
+abline(v = Cole102PopTest[[1]][4,3], col = "Red", lwd = 2)
+
+dev.off()
+par(mfrow=c(1,1))
+
+RankMat101<-matrix(data = NA, nrow = 3, ncol = 3)
+RankMat102<-RankMat101
+PosVec <- c(1,3,4)
+for(i in 1:3){
+  k <- PosVec[i]
+  for(j in 1:3){
+    Rank101 <- mean(Cole101PopTest[[3]][[k]][,j] < Cole101PopTest[[1]][k,j])
+    Rank102 <- mean(Cole102PopTest[[3]][[k]][,j] < Cole102PopTest[[1]][k,j])
+
+    RankMat101[i,j] <- Rank101
+    RankMat102[i,j] <- Rank102
+  }
+}
+
+hist(1/Cole101PopTest[[3]][[1]][,1], breaks = 20, main = NULL, xlab = NULL, ylab = NULL)
+abline(v = 1/Cole101PopTest[[1]][1,1], col = "Red", lwd = 2)
+text(x = 1/Cole101PopTest[[1]][1,1] + 5E-13, y = 15, labels = paste("p = ", RankMat101[1,1]), col = "red", cex = 4)
+
+hist(1/Cole101PopTest[[3]][[1]][,3], breaks = 20, main = NULL, xlab = NULL, ylab = NULL)
+abline(v = 1/Cole101PopTest[[1]][1,3], col = "Red", lwd = 2)
+text(x = 1/Cole101PopTest[[1]][1,3] + 3E-12, y = 15, labels = paste("p = ", RankMat101[1,3]), col = "red", cex = 4)
+
+
+hist(1/Cole102PopTest[[3]][[1]][,1], breaks = 20, main = NULL, xlab = NULL, ylab = NULL)
+abline(v = 1/Cole102PopTest[[1]][1,1], col = "Red", lwd = 2)
+text(x = 1/Cole102PopTest[[1]][1,1] + 1E-11, y = 15, labels = paste("p = ", RankMat102[1,1]), col = "red", cex = 4)
+
+hist(1/Cole102PopTest[[3]][[1]][,3], breaks = 20, main = NULL, xlab = NULL, ylab = NULL)
+abline(v =1/Cole102PopTest[[1]][1,3], col = "Red", lwd = 2)
+text(x = 1/Cole102PopTest[[1]][1,3] + 5E-11, y = 15, labels = paste("p = ", RankMat102[1,3]), col = "red", cex = 4)
+
+
+mean((1/Cole102PopTest[[1]][1,3]) < (1/Cole102PopTest[[3]][[1]][,3]))
+mean(Cole102PopTest[[1]][1,3] > Cole102PopTest[[3]][[1]][,3])
+
+LCSExtract(CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,1],"Loc"],
+           CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,2],"Loc"],
+                         as.numeric(CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,1],"FirstDet"]),
+                         as.numeric(CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,1],"LastDet"]),
+                         as.numeric(CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,2],"FirstDet"]),
+                         as.numeric(CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,2],"LastDet"]),
+                         c("All"))
+
+
 
 DebugCole<-function(SetKey,PairKey){
   cat("std::vector<std::string> Fish1Seq_ {", paste(shQuote(CNFHChinDense[which(CNFHChinDense$FishID %in% ColemanPairs[[SetKey]][PairKey,1]),"Loc"], 
@@ -202,4 +418,5 @@ DebugCole<-function(SetKey,PairKey){
   cat("std::vector<double> TSeqDep2 {", paste(as.numeric(CNFHChinDense[which(CNFHChinDense$FishID %in% ColemanPairs[[SetKey]][PairKey,2]),"LastDet"]), 
                                               collapse =", "), "};\n")
 }
-DebugCole(2,1)
+
+DebugCole(2,2118)

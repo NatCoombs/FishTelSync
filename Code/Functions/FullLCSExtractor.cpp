@@ -24,10 +24,52 @@
 #include <utility>
 #include <numeric>
 #include <list>
-#include <queue>
 #include <stack>
-//int k = 0;
+#include <unordered_map>
 
+
+
+
+double DiffM(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, std::vector<int> Const1, std::vector<int> Const2, std::vector<std::vector<double>> &DiffLUT){
+    
+    std::vector<double> DiffVec(C1.size(), NAN);
+    
+    double DiffMean;
+    for(int k = 0; k<C1.size(); k++){
+        if(!(DiffLUT[Const1[k]][Const2[k]] > 0)){
+            DiffVec[k] = ((C1[k][0] - C2[k][0]) + (C1[k][1] - C2[k][1]));
+            DiffLUT[Const1[k]][Const2[k]] = DiffVec[k];
+        } else{
+            DiffVec[k] = DiffLUT[Const1[k]][Const2[k]];
+        }
+    }
+    
+    double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
+    DiffMean = DiffSum / (2 * DiffVec.size());
+    return DiffMean;
+}
+double ConDist(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, int k){
+    
+    double OutVal;
+    
+    OutVal = ((std::pow((C1[k][0] - C2[k][0]), 2) /2) + (std::pow((C1[k][1]-C2[k][1]),2) /2));
+    
+    return OutVal;
+}
+double ConPhase(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, int k, double DiffMean){
+    double OutVal;
+    
+    OutVal = (std::pow((C1[k][0]-C2[k][0] - DiffMean), 2)  +  std::pow((C1[k][1]-C2[k][1] - DiffMean), 2));
+    
+    return OutVal;
+}
+double ConStep(std::vector<std::vector<double>> C1, std::vector<std::vector<double>> C2, int k){
+    double OutVal;
+    
+    OutVal = ((std::pow(((C1[k][0]-C1[k-1][1]) - (C2[k][0]-C2[k-1][1])),2) / 2)  + (std::pow( ((C1[k][1]-C1[k][0]) - (C2[k][1]-C2[k][0])) , 2) / 2));
+    
+    return OutVal;
+}
 
 
 void IntLibConverter(std::vector<std::string> Fish1Seq_, std::vector<std::string> Fish2Seq_,
@@ -140,7 +182,7 @@ void PullAll(std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, int Size1, in
     //Iterate as needed
     for (int i=indx1; i<Size1; i++)
             {
-                for (int j=indx2; j<Size2; j++)
+                for(int j=indx2; j<Size2; j++)
                               {
                                   if (Fish1Seq[i] == Fish2Seq[j] &&
                                                     DPmat[i][j] == lcslen-currlcs)
@@ -149,9 +191,8 @@ void PullAll(std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, int Size1, in
                                                       //F1Index[currlcs] = std::to_string(i + 1);
                                                       //F2Index[currlcs] = std::to_string(j + 1);
                                                     PullAll(Fish1Seq, Fish2Seq, Size1, Size2, data, i+1, j+1, currlcs+1, LCSset, lcslen, DPmat/* PullSet, F1Index, F2Index*/);
-                                                    break;
+                                                      break;
                                                   }
-                                  
                               }
             }
 }
@@ -240,14 +281,100 @@ std::vector<std::vector<int>> KeyFinder(std::vector<std::vector<int>> DKey){
 //    }
 //    return CSet;
 //}
+void BestConsts(std::vector<int> Const1, std::vector<int> Const2, std::vector<std::vector<std::vector<int>>> &BestSet,
+                std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2,
+                std::vector<std::vector<double>> &tVec1, std::vector<std::vector<double>> &tVec2,
+                double & BestDist, double & BestPhase, double & BestStep,
+                std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT,
+                std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec,
+                double & CurrDist, double & CurrPhase, double & CurrStep){
+    for(int m = 0; m<Const1.size(); m++){
+        std::vector<double> TPair1(2, NAN);
+        TPair1[0] = TSeqArr1[Const1[m]];
+        TPair1[1] = TSeqDep1[Const1[m]];
+        tVec1[m] = TPair1;
+        std::vector<double> TPair2(2, NAN);
+        TPair2[0] = TSeqArr2[Const2[m]];
+        TPair2[1] = TSeqDep2[Const2[m]];
+        tVec2[m] = TPair2;
+    }
+    
+    double DiffMean = DiffM(tVec1, tVec2, Const1, Const2, DiffLUT);
+    
 
-std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<int> p(lcslen);
-    //std::cout << "The number of nodes visited is: ";
-    std::vector<bool> visited(Graph.size(),false);
-    int NodeInc = 0;
+    
+    if(!(DistLUT[ Const1[0] ][ Const2[0] ] > 0)){
+        DistVec[0] = ConDist(tVec1, tVec2, 0);
+        DistLUT[Const1[0]][Const2[0]] = DistVec[0];
+    } else{
+        DistVec[0] = DistLUT[Const1[0]][Const2[0]];
+    }
+    
+    PhaseVec[0] = ConPhase(tVec1, tVec2, 0, DiffMean);
+
+    StepVec[0] = (0);
+    
+    
+    
+    for(int k = 1; k<Const1.size(); k++){
+        
+        if(!(DistLUT[Const1[k]][Const2[k]] > 0)){
+            DistVec[k] = ConDist(tVec1, tVec2, k);;
+            DistLUT[Const1[k]][Const2[k]] = DistVec[k];
+        } else {
+            DistVec[k] = DistLUT[Const1[k]][Const2[k]];
+        }
+        
+        PhaseVec[k] = ConPhase(tVec1, tVec2, k, DiffMean);
+        
+        if(!(StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] > 0)){
+            StepVec[k] = ConStep(tVec1, tVec2, k);
+            StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] = StepVec[k];
+        } else {
+            StepVec[k] = StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]];
+        }
+        
+    }
+    
+    CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
+    CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
+    CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
+    
+    if(!(BestDist < CurrDist)){
+        BestDist = CurrDist;
+        for(int i = 0; i < DistVec.size(); i++){
+            BestSet[0][0][i] = Const1[i];
+            BestSet[0][1][i] = Const2[i];
+        }
+//                                             BestDistVec = DistVec;
+    }
+    if(!(BestPhase < CurrPhase)){
+        BestPhase = CurrPhase;
+        for(int i = 0; i < DistVec.size(); i++){
+            BestSet[1][0][i] = Const1[i];
+            BestSet[1][1][i] = Const2[i];
+        }
+//                                             BestPhaseVec = PhaseVec;
+    }
+    if(!(BestStep < CurrStep)){
+        BestStep = CurrStep;
+        for(int i = 0; i < DistVec.size(); i++){
+            BestSet[2][0][i] = Const1[i];
+            BestSet[2][1][i] = Const2[i];
+        }
+//                                             BestStepVec = StepVec;
+    }
+    //By this point, BestSet contains our best constructors. We can always come back and recalculate the values from here later.
+    
+    
+}
+void DFSInner(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen,
+              // Housekeeping arguments to pass to the core
+              std::vector<int> Const1, std::vector<int> & Const2, std::vector<std::vector<std::vector<int>>> &BestSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> &tVec1, std::vector<std::vector<double>> &tVec2, double & BestDist, double & BestPhase, double & BestStep, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT, std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec, double & CurrDist, double & CurrPhase, double & CurrStep){
+    int MaxDepth = lcslen - 1;
+    
+    std::vector<int> NodeVec(DKey[0].size(), NAN);
+    
     for(int i = 0; i < StartKeys.size(); i++){
             
             std::stack<int> s;
@@ -255,52 +382,16 @@ std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, s
             s.push(StartKeys[i]);
         
             while(!s.empty()){
-                //std::cout << "The stack is: " << s.size() << " elements long.\n";
                 int Curr = s.top();
                 s.pop();
-                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
+
+                int Depth = DKey[1][Curr];
                 
-                int Depth = DKey[1][dInd - DKey[0].begin()];
+                Const2[Depth] = DKey[2][Curr];
                 
-                
-                if(visited[Curr]){
-                    //std::cout << "The most recent node revisited is: " <<Curr << "\n";
-                   // Let's add the crazy shit
-                    std::vector<std::vector<int>> VecSub;
-                    for(int j = 0; j < CSet.size(); j++){
-                        if(CSet[j][Depth] == Curr){
-                            std::vector<int> Twig;
-                            
-                            for(int k = Depth; k < lcslen; k++){
-                                Twig.push_back(CSet[j][k]);
-                            }
-                            VecSub.push_back(Twig);
-                        }
-                    }
-//Switch to using std::unique here
-                    
-                    std::sort(VecSub.begin(),VecSub.end());
-                    
-                    VecSub.erase(std::unique(VecSub.begin(),VecSub.end()),VecSub.end());
-                    
-                    
-                    for(int j = 0; j < VecSub.size(); j++){
-                        for(int k = Depth; k < lcslen; k++){
-                            p[k] = VecSub[j][(k - Depth)];
-                        }
-                        CSet.push_back(p);
-                    }
-                    
-                } else {
-                    NodeInc++;
-                   // std::cout << NodeInc << " ";
-                    //std::cout << "The most recent new node visited is: " <<Curr << "\n";
-                    
-                    visited[Curr] = true;
-                    p[Depth] = Curr;
-                
-                    if(Depth == (lcslen-1)){
-                        CSet.push_back(p);
+                    if(Depth == MaxDepth){
+                        
+                        BestConsts(Const1, Const2, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep);
                     
                     } else {
                 
@@ -310,18 +401,14 @@ std::vector<std::vector<int>> AllPathsDFS(std::vector<std::vector<int>> Graph, s
                 }
                 }
             }
-        
-    }
-    return CSet;
 }
-
-std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<int> p(lcslen);
-    //std::cout << "The number of nodes visited is: ";
-    //std::vector<bool> visited(Graph.size(),false);
-    int NodeInc = 0;
+void DFSOuter(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen,
+              // Housekeeping arguments to pass to the inner loop
+              std::vector<std::vector<int>> Graph2, std::vector<int> StartKeys2, std::vector<int> EndKeys2, std::vector<std::vector<int>> DKey2,
+              // Housekeeping arguments to pass to the core
+              std::vector<int> & Const1, std::vector<int> & Const2, std::vector<std::vector<std::vector<int>>> &BestSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> & tVec1, std::vector<std::vector<double>> & tVec2, double & BestDist, double & BestPhase, double & BestStep, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT, std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec, double & CurrDist, double & CurrPhase, double & CurrStep){
+    int MaxDepth = lcslen - 1;
+    std::vector<int> NodeVec(DKey[0].size(), NAN);
     for(int i = 0; i < StartKeys.size(); i++){
             
             std::stack<int> s;
@@ -329,24 +416,16 @@ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Gra
             s.push(StartKeys[i]);
         
             while(!s.empty()){
-                //std::cout << "The stack is: " << s.size() << " elements long.\n";
                 int Curr = s.top();
                 s.pop();
-                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
+
+                int Depth = DKey[1][Curr];
                 
-                int Depth = DKey[1][dInd - DKey[0].begin()];
+                Const1[Depth] = DKey[2][Curr];
                 
-                
-               
-                    NodeInc++;
-                  //  std::cout << NodeInc << " ";
-                    //std::cout << "The most recent new node visited is: " <<Curr << "\n";
-                    
-                    //visited[Curr] = true;
-                    p[Depth] = Curr;
-                
-                    if(Depth == (lcslen-1)){
-                        CSet.push_back(p);
+                    if(Depth == MaxDepth){
+                        
+                        DFSInner(Graph2, StartKeys2, EndKeys2, DKey2, lcslen, Const1, Const2, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrPhase);
                     
                     } else {
                 
@@ -356,301 +435,242 @@ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Gra
                 }
                 }
             }
-        
     
-    return CSet;
-}
-std::vector<std::vector<int>> DnCSub(std::vector<std::vector<int>> Graph, std::vector<std::vector<int>> DKey, int MaxDepth, int MinDepth){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<std::vector<std::vector<int>>> EdgeTree(2);
-
-    int F1;
-    int F2;
-    if(MaxDepth % 2 == 0){
-        F1 = 0;
-        F2 = 1;
-    } else {
-        F1 = 1;
-        F2 = 0;
-    }
-    std::vector<int> LeafHolder(1);
-    for(int i = 0; i < DKey[1].size(); i++){
-        if(DKey[1][i] == MaxDepth){
-            LeafHolder[0] = DKey[0][i];
-            EdgeTree[F1].push_back(LeafHolder);
-        }
-    }
-    for(int i = (MaxDepth - 1); i > (MinDepth - 1); i--){
-        //std::cout << "The current depth being evaluated is: " << i + 1 << "\n";
-        //Set flags to alternate objects
-        if(i % 2 == 0){
-            F1 = 0;
-            F2 = 1;
-        } else {
-            F1 = 1;
-            F2 = 0;
-        }
-
-        std::vector<int> DepKey;
-
-        for(int j = 0; j < DKey[1].size(); j++){
-            if(DKey[1][j] == i){
-                DepKey.push_back(DKey[0][j]);
-            }
-        }
-        EdgeTree[F1].clear();
-        // Now we have a flagset & a set of nodes at this depth
-        for(int j = 0; j < DepKey.size(); j++){
-            int CurrNode = DepKey[j];
-            std::vector<int> AdjVec = Graph[DepKey[j]];
-            for(int k = 0; k < AdjVec.size(); k++){
-                int CurrChild = AdjVec[k];
-                // For each of these points, there will be one or more sets of "existing" paths
-                std::vector<int> PathVec;
-                for(int l = 0; l < EdgeTree[F2].size(); l++){
-                    if(EdgeTree[F2][l][0] == CurrChild){
-                        PathVec.push_back(l);
-                    }
-                }
-
-                // Now we have a vector of keys as to which paths we can append.
-                if(PathVec.size() > 0){
-                    EdgeTree[F1].reserve(EdgeTree[F1].size() + PathVec.size());
-                for(int l = 0; l < PathVec.size(); l++){
-                    std::vector<int> Path(1, CurrNode);
-                    Path.reserve(MaxDepth - i);
-                    Path.insert(Path.begin()+1,EdgeTree[F2][l].begin(),EdgeTree[F2][l].end());
-                    Path.shrink_to_fit();
-                    EdgeTree[F1].push_back(Path);
-                }} else {
-                    std::vector<int> Path(1, CurrNode);
-                    EdgeTree[F1].push_back(Path);
-                }
-
-            }
-        }
-
-    }
-    // At the end, EdgeTree[F1] contains every path from root to leaf as a vector, so we need to pull only those of appropriate length
-    int PathLength = MaxDepth - MinDepth + 1;
     
-    for(int i = 0; i < EdgeTree[F1].size(); i++){
-        if(EdgeTree[F1][i].size() == (PathLength)){
-            CSet.push_back(EdgeTree[F1][i]);
-        }
-    }
-
-    return CSet;
+    
 }
 
-std::vector<std::vector<int>> AllPathsDnC(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    int PartDex = 5;
-    std::vector<std::vector<int>> CSet;
-    int MaxDepth = (lcslen - 1);
-    int dodec = std::ceil((MaxDepth + 1) / PartDex);
-    int end = dodec-1;
-    //std::cout << dodec << " is the number of partitions to be included in the constructor set.\nThe current number of partitions evaluated is: ";
-    
-    std::vector<std::vector<std::vector<int>>> PathComp(dodec);
-    for(int i = 0; i < end; i++){
-        std::vector<std::vector<int>> Parti;
-        int lB = i*PartDex;
-        int uB = (i+1)*PartDex;
-        
-        Parti = DnCSub(Graph, DKey, uB, lB);
-       // std::cout << i + 1 << " ";
-        
-        
-        PathComp[i] = Parti;
-    }
-    int lB = end*PartDex;
-    int uB = MaxDepth;
-    
-    PathComp[end] = DnCSub(Graph, DKey, uB, lB);
-    //std::cout << dodec << "\n";
-    std::vector<std::vector<int>> Ends(dodec);
-    std::vector<std::vector<int>> Starts(dodec);
-//    for(int i = 0; i < PathComp[0].size(); i++){
-//        CSet.push_back(PathComp[0][i]);
-//        Starts[0][i] = CSet[i][0];
-//        Ends[0][i] = CSet[i][19];
+//void BestConstsSub(std::vector<int> Const1, std::vector<int> Const2,
+//                std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2,
+//                std::vector<std::vector<double>> &tVec1, std::vector<std::vector<double>> &tVec2,
+//                std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT,
+//                std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec,
+//                double & CurrDist, double & CurrPhase, double & CurrStep, std::unordered_map<int, std::unordered_map<int,std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::tuple<double, std::vector<std::vector<int>>>>>>>> & BestSub){
+//    for(int m = 0; m<Const1.size(); m++){
+//        std::vector<double> TPair1(2, NAN);
+//        TPair1[0] = TSeqArr1[Const1[m]];
+//        TPair1[1] = TSeqDep1[Const2[m]];
+//        tVec1[m] = TPair1;
+//        std::vector<double> TPair2(2, NAN);
+//        TPair2[0] = TSeqArr2[Const1[m]];
+//        TPair2[1] = TSeqDep2[Const2[m]];
+//        tVec2[m] = TPair2;
 //    }
-    
-    for(int i = 0; i < end; i++){
-        for(int j = 0; j < PathComp[i].size(); j++){
-            Starts[i].push_back(PathComp[i][j][0]);
-            Ends[i].push_back(PathComp[i][j][PartDex]);
-        }
-    }
-    
-    for(int j = 0; j < PathComp[end].size(); j++){
-        Starts[end].push_back(PathComp[end][j][0]);
-        Ends[end].push_back(PathComp[end][j][uB - lB]);
-    }
-    
-    std::vector<std::vector<std::vector<int>>> PathEdges(end);
-    for(int i = 0; i < end; i++){
-        std::vector<std::vector<int>> EdgeKeys;
-        for(int j = 0; j < Ends[i].size(); j++){
-            std::vector<int> EdgeVec;
-            int EndPoint = Ends[i][j];
-            std::vector<int> StartSet = Starts[i+1];
-            for(int k = 0; k < Starts[i + 1].size(); k++){
-                if(StartSet[k] == EndPoint){
-                    EdgeVec.push_back(k);
-                }
-            }
-            EdgeKeys.push_back(EdgeVec);
-        }
-        PathEdges[i] = EdgeKeys;
-    }
-    
-//    for(int i = 0; i < PathComp[0].size(); i++){
-//        CSet.push_back(PathComp[0][i]);
-//        Starts[0][i] = CSet[i][0];
-//        Ends[0][i] = CSet[i][19];
-//    }
-    // Okay, how do I keep this from being completely goddamn useless?
-    std::vector<std::vector<std::vector<std::vector<int>>>> DdexPaths(2);
-    int F1;
-    int F2;
-//    int incr = 0;
-    for(int i = 0; i < PathComp[0].size(); i++){
-        std::vector<std::vector<int>> Plug = {PathComp[0][i]};
-        DdexPaths[0].push_back(Plug);
-    }
-    
-    //std::cout << "The current number of partitions in the constructor set is: 1 ";
-    
-    for(int i = 1; i < dodec; i++){
-        if(i % 2 == 0){
-            F1 = 0;
-            F2 = 1;
-        } else {
-            F1 = 1;
-            F2 = 0;
-        }
-        int Pathdex = i-1;
-        std::vector<int> EndSet = Ends[Pathdex];
-        std::vector<int> StartSet = Starts[i];
-        std::vector<std::vector<std::vector<int>>> DexSubPaths;
-        for(int j = 0; j < EndSet.size(); j++){
-            std::vector<std::vector<int>> PathSet;
-            //std::vector<int> BasePath = DdexPaths[F2][j][0];
-            int End = EndSet[j];
-            // Do some work here
-            for(int k = 0; k < StartSet.size(); k++){
-                if(StartSet[k] == End){
-                    std::vector<std::vector<int>> PathSub = DdexPaths[F2][j];
-                    std::vector<int> AddPath = PathComp[i][k];
-                    for(int l = 0; l < PathSub.size(); l++){
-                        std::vector<int> BasePath = PathSub[l];
-                        BasePath.insert(BasePath.end(),AddPath.begin() + 1,AddPath.end());
-                        PathSet.push_back(BasePath);
-                    }
-                }
-                
-                DexSubPaths.push_back(PathSet);
-            }
-        }
-        DdexPaths[F1] = DexSubPaths;
-        //std::cout << i + 1 << " ";
-    }
-    // At the end of the loop, F1 is the one we want to unravel into each constructor
-    for(int i = 0; i < DdexPaths[F1].size(); i++){
-        for(int j = 0; j < DdexPaths[F1][i].size(); j++){
-            CSet.push_back(DdexPaths[F1][i][j]);
-        }
-    }
-   // std::cout << "\n";
-    return CSet;
-}
 //
-std::vector<std::vector<int>> AllPathsInvert(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
-    // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
-    std::vector<std::vector<int>> CSet;
-    std::vector<std::vector<std::vector<int>>> EdgeTree(2);
-
-    int MaxDepth = *std::max_element(DKey[1].begin(),DKey[1].end());
-    int F1;
-    int F2;
-    if(MaxDepth % 2 == 0){
-        F1 = 0;
-        F2 = 1;
-    } else {
-        F1 = 1;
-        F2 = 0;
-    }
-    std::vector<int> LeafHolder(1);
-    for(int i = 0; i < DKey[1].size(); i++){
-        if(DKey[1][i] == MaxDepth){
-            LeafHolder[0] = DKey[0][i];
-            EdgeTree[F1].push_back(LeafHolder);
-        }
-    }
-    for(int i = (MaxDepth - 1); i > -1; i--){
-        //std::cout << "The current depth being evaluated is: " << i + 1 << "\n";
-        //Set flags to alternate objects
-        if(i % 2 == 0){
-            F1 = 0;
-            F2 = 1;
-        } else {
-            F1 = 1;
-            F2 = 0;
-        }
-
-        std::vector<int> DepKey;
-
-        for(int j = 0; j < DKey[1].size(); j++){
-            if(DKey[1][j] == i){
-                DepKey.push_back(DKey[0][j]);
-            }
-        }
-        EdgeTree[F1].clear();
-        // Now we have a flagset & a set of nodes at this depth
-        for(int j = 0; j < DepKey.size(); j++){
-            int CurrNode = DepKey[j];
-            std::vector<int> AdjVec = Graph[DepKey[j]];
-            for(int k = 0; k < AdjVec.size(); k++){
-                int CurrChild = AdjVec[k];
-                // For each of these points, there will be one or more sets of "existing" paths
-                std::vector<int> PathVec;
-                for(int l = 0; l < EdgeTree[F2].size(); l++){
-                    if(EdgeTree[F2][l][0] == CurrChild){
-                        PathVec.push_back(l);
-                    }
-                }
-
-                // Now we have a vector of keys as to which paths we can append.
-                if(PathVec.size() > 0){
-                    EdgeTree[F1].reserve(EdgeTree[F1].size() + PathVec.size());
-                for(int l = 0; l < PathVec.size(); l++){
-                    std::vector<int> Path(1, CurrNode);
-                    Path.reserve(MaxDepth - i);
-                    Path.insert(Path.begin()+1,EdgeTree[F2][l].begin(),EdgeTree[F2][l].end());
-                    Path.shrink_to_fit();
-                    EdgeTree[F1].push_back(Path);
-                }} else {
-                    std::vector<int> Path(1, CurrNode);
-                    EdgeTree[F1].push_back(Path);
-                }
-
-            }
-        }
-
-    }
-    // At the end, EdgeTree[F1] contains every path from root to leaf as a vector, so we need to pull only those of length == MaxDepth
-    for(int i = 0; i < EdgeTree[F1].size(); i++){
-        if(EdgeTree[F1][i].size() == (MaxDepth+1)){
-            CSet.push_back(EdgeTree[F1][i]);
-        }
-    }
-
-    return CSet;
-}
-
+//    double DiffMean = DiffM(tVec1, tVec2, Const1, Const2, DiffLUT);
+//    int L = Const1.size();
+//
+//
+//    if(!(DistLUT[ Const1[0] ][ Const2[0] ] > 0)){
+//        DistVec[0] = ConDist(tVec1, tVec2, 0);
+//        DistLUT[Const1[0]][Const2[0]] = DistVec[0];
+//    } else{
+//        DistVec[0] = DistLUT[Const1[0]][Const2[0]];
+//    }
+//
+//    PhaseVec[0] = ConPhase(tVec1, tVec2, 0, DiffMean);
+//
+//    StepVec[0] = (0);
+//
+//
+//
+//    for(int k = 1; k<Const1.size(); k++){
+//
+//        if(!(DistLUT[Const1[k]][Const2[k]] > 0)){
+//            DistVec[k] = ConDist(tVec1, tVec2, k);;
+//            DistLUT[Const1[k]][Const2[k]] = DistVec[k];
+//        } else {
+//            DistVec[k] = DistLUT[Const1[k]][Const2[k]];
+//        }
+//
+//        PhaseVec[k] = ConPhase(tVec1, tVec2, k, DiffMean);
+//
+//        if(!(StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] > 0)){
+//            StepVec[k] = ConStep(tVec1, tVec2, k);
+//            StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]] = StepVec[k];
+//        } else {
+//            StepVec[k] = StepLUT[Const1[k-1]][Const1[k]][Const2[k-1]][Const2[k]];
+//        }
+//
+//    }
+//
+//    CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
+//    CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
+//    CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
+//
+//    if(std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0]) == 0){
+//       std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0]) = NAN;
+//       std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][1]) = NAN;
+//       std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][2]) = NAN;
+//    }
+//
+//
+//
+//
+//
+//    if(!(std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0]) < CurrDist)){
+//
+//        std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0]) = CurrDist;
+//
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0]).resize(2);
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0])[0].assign(Const1.begin(), Const1.end());
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][0])[1].assign(Const2.begin(), Const2.end());
+////                                             BestDistVec = DistVec;
+//    }
+//    if(!(std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][1]) < CurrPhase)){
+//
+//        std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][1]) = CurrPhase;
+//
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][1]).resize(2);
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][1])[0].assign(Const1.begin(), Const1.end());
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][1])[1].assign(Const2.begin(), Const2.end());
+////                                             BestPhaseVec = PhaseVec;
+//    }
+//    if(!(std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][2]) < CurrStep)){
+//
+//        std::get<0>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][2]) = CurrStep;
+//
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][2]).resize(2);
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][2])[0].assign(Const1.begin(), Const1.end());
+//        std::get<1>(BestSub[Const1[0]][Const1[L]][Const2[0]][Const2[L]][2])[1].assign(Const2.begin(), Const2.end());
+////                                             BestStepVec = StepVec;
+//    }
+//    //By this point, BestSet contains our best constructors. We can always come back and recalculate the values from here later.
+//
+//
+//}
+//void DFSInnerSub(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey,
+//                 // Housekeeping arguments to pass to the core
+//                 std::vector<int> Const1, std::vector<int> & Const2, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> &tVec1, std::vector<std::vector<double>> &tVec2, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT, std::vector<double> & DistVec, std::vector<double> & PhaseVec, std::vector<double> & StepVec, double & CurrDist, double & CurrPhase, double & CurrStep, std::unordered_map<int, std::unordered_map<int,std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::tuple<double, std::vector<std::vector<int>>>>>>>> & BestSub){
+//    int MaxDepth = *max_element(DKey[1].begin(),DKey[1].end());
+//
+//    std::vector<int> NodeVec(DKey[0].size(), NAN);
+//    // On the out here, we can build our vectors to pass.
+//
+//
+//    for(int i = 0; i < StartKeys.size(); i++){
+//
+//            std::stack<int> s;
+//
+//            s.push(StartKeys[i]);
+//
+//            while(!s.empty()){
+//                int Curr = s.top();
+//                s.pop();
+//
+//                int Depth = DKey[1][Curr];
+//
+//                Const2[Depth] = DKey[2][Curr];
+//
+//                    if(Depth == MaxDepth){
+//
+//                        BestConstsSub(Const1, Const2, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep, BestSub);
+//
+//                    } else {
+//
+//                for(int k = 0; k < Graph[Curr].size(); k++){
+//                    s.push(Graph[Curr][k]);
+//                }
+//                }
+//                }
+//            }
+//}
+//void DFSOuterSub(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey,
+//              // Housekeeping arguments to pass to the inner loop
+//              std::vector<std::vector<int>> Graph2, std::vector<int> StartKeys2, std::vector<int> EndKeys2, std::vector<std::vector<int>> DKey2,
+//              // Housekeeping arguments to pass to the core
+//              std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT, std::unordered_map<int, std::unordered_map<int,std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::tuple<double, std::vector<std::vector<int>>>>>>>> & BestSub){
+//    int MaxDepth = *max_element(DKey[1].begin(),DKey[1].end());
+//    std::vector<int> NodeVec(DKey[0].size(), NAN);
+//    std::vector<int> Const1(MaxDepth+1, NAN);
+//    std::vector<int> Const2(MaxDepth+1, NAN);
+//    std::vector<double> DistVec(MaxDepth+1, NAN);
+//    std::vector<double> PhaseVec(MaxDepth+1, NAN);
+//    std::vector<double> StepVec(MaxDepth+1, NAN);
+//    std::vector<std::vector<double>> tVec1(MaxDepth+1, std::vector<double>(2, NAN));
+//    std::vector<std::vector<double>> tVec2(MaxDepth+1, std::vector<double>(2, NAN));
+//    double CurrDist;
+//    double CurrPhase;
+//    double CurrStep;
+//
+//    for(int i = 0; i < StartKeys.size(); i++){
+//
+//            std::stack<int> s;
+//
+//            s.push(StartKeys[i]);
+//
+//            while(!s.empty()){
+//                int Curr = s.top();
+//                s.pop();
+//
+//                int Depth = DKey[1][Curr];
+//
+//                Const1[Depth] = DKey[2][Curr];
+//
+//                    if(Depth == MaxDepth){
+//
+//                        DFSInnerSub(Graph2, StartKeys2, EndKeys2, DKey2, Const1, Const2, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep, BestSub);
+//
+//                    } else {
+//
+//                for(int k = 0; k < Graph[Curr].size(); k++){
+//                    s.push(Graph[Curr][k]);
+//                }
+//                }
+//                }
+//            }
+//
+//
+//
+//}
+/*
+ std::vector<std::vector<int>> AllPathsDFSNaive(std::vector<std::vector<int>> Graph, std::vector<int> StartKeys, std::vector<int> EndKeys, std::vector<std::vector<int>> DKey, int lcslen){
+     // Add a visitation rule and one vector that indicates whether there is a route to the target and another that includes every known route to the end.
+     std::vector<std::vector<int>> CSet;
+     std::vector<int> p(lcslen);
+     //std::cout << "The number of nodes visited is: ";
+     //std::vector<bool> visited(Graph.size(),false);
+     //int NodeInc = 0;
+     int MaxDepth = lcslen - 1;
+     for(int i = 0; i < StartKeys.size(); i++){
+             
+             std::stack<int> s;
+             
+             s.push(StartKeys[i]);
+         
+             while(!s.empty()){
+                 //std::cout << "The stack is: " << s.size() << " elements long.\n";
+                 int Curr = s.top();
+                 s.pop();
+ //                auto dInd = std::find(DKey[0].begin(), DKey[0].end(), Curr);
+ //
+ //                int Depth = DKey[1][dInd - DKey[0].begin()];
+                 int Depth = DKey[1][Curr];
+                 
+                
+                     //NodeInc++;
+                     //std::cout << NodeInc << " ";
+                     //std::cout << "The most recent new node visited is: " <<Curr << "\n";
+                     
+                     //visited[Curr] = true;
+                     p[Depth] = Curr;
+                 
+                     if(Depth == MaxDepth){
+                         CSet.push_back(p);
+                     
+                     } else {
+                 
+                 for(int k = 0; k < Graph[Curr].size(); k++){
+                     s.push(Graph[Curr][k]);
+                 }
+                 }
+                 }
+             }
+         
+     
+     return CSet;
+ }
+ */
 
 std::vector<std::vector<int>> NodeLocConvert(std::vector<std::vector<int>> & CSet_, std::vector<std::vector<int>> & DKey){
     std::vector<std::vector<int>> CSet(CSet_);
@@ -676,23 +696,197 @@ std::vector<std::vector<int>> NodeLocConvert(std::vector<std::vector<int>> & CSe
     
     return CSet;
 }
+/*
+ if(NodeVec[curr] > -1){
+     
+     Const1[curr] = int(NodeVec[curr]);
+     
+ } else {
+     
+     auto NInd = find(DKey[0].begin(), DKey[0].end(), curr);
+     int NodeC = DKey[2][NInd - DKey[0].begin()];
+     NodeVec[curr] = double(NodeC);
+     Const1[Curr] = NodeC;
+     
+ }
+ Const1[Depth] = Curr;
+ */
 
-void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> & PullSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib, int lcslen, int Size1, int Size2){
+void Graphify(std::vector<std::vector<int>> &Graph, std::vector<std::vector<int>> &DKey,
+              std::vector<std::vector<int>> FMT){
+    // Function takes an empty Graph object and an empty DKey (of length 3) and uses a match table to populate them for finding viable traversals.
+    std::vector<int> N;
+    std::vector<int> D;
+    std::vector<int> C;
+    std::vector<std::vector<int>> CKey(FMT);
+    int Gind = 0;
+    for(int j = 0; j < FMT.size(); j++){
+        for(int k = 0; k < FMT[j].size(); k++){
+            CKey[j][k] = Gind;
+            N.push_back(Gind);
+            D.push_back(j);
+            C.push_back(FMT[j][k]);
+            Gind++;
+            }
+    }
+    DKey[0] = N;
+    DKey[1] = D;
+    DKey[2] = C;
+
+    int jLim = (FMT.size()-1);
+    for(int j = 0; j<(FMT.size()); j++){
+        for(int k = 0; k<FMT[j].size(); k++){
+
+            int CPar = FMT[j][k];
+
+            std::vector<int> CAdj;
+            if(jLim != j){
+
+            for(int m = 0; m<FMT[j+1].size(); m++){
+                int CChil = FMT[j+1][m];
+                if(CPar < CChil){
+                    CAdj.push_back(CKey[j+1][m]);
+                }
+            }}
+            Graph.push_back(CAdj);
+
+        }
+    }
+
+}
+//
+//void FMPruner(std::vector<std::vector<int>> & FMT1, std::vector<std::vector<int>> & FMT2, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::vector<double>> & DistLUT, std::vector<std::vector<double>> & DiffLUT, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> & StepLUT, int PruneThreshC, int PruneThreshLev){
+//    // This nutty hash table has as its first key, the first starting index, as its second key, the second starting index, and, as its third key, an integer from 0 to 2 indicating which distance metric it refers to.
+//
+//    std::vector<int> Levs(FMT1.size(), 0);
+//    std::vector<int> ContKey(2);
+//    std::vector<std::vector<int>> ContTable;
+//
+//
+//    if((FMT1[0].size() >= PruneThreshLev) || (FMT2[0].size() >= PruneThreshLev)){
+//        ContKey[0] = 0;
+//    }
+//    for(int i = 1; i < Levs.size(); i++){
+//        if((FMT1[i].size() < PruneThreshLev) || (FMT2[i].size() < PruneThreshLev)){
+//            if(Levs[i-1] != 0){
+//                // End a sequence of threshold meeters
+//                ContKey[1] = (i - ContKey[0]);
+//                ContTable.push_back(ContKey);
+//            }
+//
+//        } else {
+//            Levs[i] = 1;
+//            if(Levs[i-1] == 0){
+//                // Start a new sequence of threshold meeters.
+//                ContKey[0] = i;
+//            }
+//        }
+//    }
+//
+//
+//    std::vector<std::vector<int>> DKey1(3);
+//    std::vector<std::vector<int>> DKey2(3);
+//    std::vector<std::vector<int>> Graph1;
+//    std::vector<std::vector<int>> Graph2;
+//    std::vector<std::vector<int>> Keys1;
+//    std::vector<std::vector<int>> Keys2;
+//    int Start;
+//    int End;
+//
+//    for(int i = 0; i < ContTable.size(); i++){
+//        if(ContTable[i][1] >= PruneThreshC){
+//            std::unordered_map<int, std::unordered_map<int,std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::tuple<double, std::vector<std::vector<int>>>>>>>> BestSub;
+//
+//
+//            DKey1.clear();
+//            DKey2.clear();
+//            DKey1.resize(3);
+//            DKey2.resize(3);
+//            Graph1.clear();
+//            Graph2.clear();
+//
+//            if(ContTable[i][0] == 0){
+//                Start = 0;
+//            } else {
+//                Start = ContTable[i][0] - 1;
+//            }
+//            if((ContTable[i][0] + ContTable[i][1] + 1) < (Levs.size() - 1)){
+//                End = ContTable[i][0] + ContTable[i][1] + 1;
+//            } else {
+//                End = Levs.size() - 1;
+//            }
+//
+//            auto FMT1S = FMT1.begin() + Start;
+//            auto FMT1E = FMT1.begin() + End;
+//            std::vector<std::vector<int>> FMT1Sub(FMT1S, FMT1E);
+//            auto FMT2S = FMT2.begin() + Start;
+//            auto FMT2E = FMT2.begin() + End;
+//            std::vector<std::vector<int>> FMT2Sub(FMT2S, FMT2E);
+//
+//            Graphify(Graph1, DKey1, FMT1Sub);
+//            Graphify(Graph2, DKey2, FMT2Sub);
+//            Keys1 = KeyFinder(DKey1);
+//            Keys2 = KeyFinder(DKey2);
+//
+//            DFSOuterSub(Graph1, Keys1[0], Keys1[1], DKey1, Graph2, Keys2[0], Keys2[1], DKey2, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, DistLUT, DiffLUT, StepLUT, BestSub);
+//
+//
+//            std::vector<std::set<int>> PruneSet1 (End - Start + 1);
+//            std::vector<std::set<int>> PruneSet2 (End - Start + 1);
+//            // In this loop, we can run through our hash table based on the indices we saved and start to prune our tree.
+//            for(int j = 0; j < Keys1[0].size(); j++){
+//                for(int k = 0; k < Keys1[1].size(); k++){
+//                    for(int l = 0; l < Keys2[0].size(); l++){
+//                        for(int m = 0; m < Keys2[1].size(); m++){
+//                            // Here we check the values from the hash table and push them into a pair of sets of positions to "prune" our match table by.
+//                            if(std::get<0>(BestSub[Keys1[0][j]][Keys1[1][k]][Keys2[0][l]][Keys2[1][m]][0]) != 0){
+//                               for(int n = 0; n < 3; n++){
+//                                    std::vector<std::vector<int>> ToSave = std::get<1>(BestSub[Keys1[0][j]][Keys1[1][k]][Keys2[0][l]][Keys2[1][m]][n]);
+//                                    for(int o = 0; o < ToSave[0].size(); o++){
+//                                        PruneSet1[o].insert(ToSave[0][o]);
+//                                        PruneSet2[o].insert(ToSave[1][o]);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            // Now we can overwrite our match tables by assigning vectors at positions from our sets.
+//            for(int j = Start; j < End+1; j++){
+//                int PKey = j - Start;
+//                FMT1[j].assign(PruneSet1[PKey].begin(), PruneSet1[PKey].end());
+//                FMT2[j].assign(PruneSet2[PKey].begin(), PruneSet2[PKey].end());
+//            }
+//
+//        }
+//    }
+//    // And bob's your uncle!
+//
+//
+//
+//}
+
+
+
+void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fish1Seq, std::vector<int> Fish2Seq, std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> & PullSet, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib, int lcslen, int Size1, int Size2, int PruneThreshC, int PruneThreshLev){
     std::vector<std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>>> Candidates(Method.size());
     
-    int l = Method.size();
-    
-    int BestConsts[l][2];
     
     
+
+    
+
     
     
     
     
     std::vector<std::vector<double>> DistLUT (Size1, std::vector<double> (Size2, NAN));
     std::vector<std::vector<double>> DiffLUT (Size1, std::vector<double> (Size2, NAN));
+    std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, double>>>> StepLUT;
+    /*
     std::vector<std::vector<std::vector<std::vector<double>>>> StepLUT (Size1, std::vector<std::vector<std::vector<double>>>(Size1, std::vector<std::vector<double>>(Size2,std::vector<double>(Size2, NAN))));
-    
+    */
     for(int i = 0; i<LCSset.size(); i++){
         std::vector<std::vector<int>> FMT1(lcslen);
         std::vector<std::vector<int>> FMT2(lcslen);
@@ -712,98 +906,27 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
                     FMT1[j] = Const1;
                     FMT2[j] = Const2;
             }
-        std::vector<int> Const1_(lcslen);
-        std::vector<int> Const2_(lcslen);
-        std::vector<std::vector<int>> CSet1;
-        std::vector<std::vector<int>> CSet2;
+
+        
+        // We need to prune somewhere in here.
+        //FMPruner(FMT1, FMT2, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, DistLUT, DiffLUT, StepLUT, PruneThreshC, PruneThreshLev);
+
         // Remember, this is still in a for loop to step through each LCS! Stepping through each constructor is done by the Construct Stepper
         std::vector<std::vector<int>> DKey1(3);
-        std::vector<int> N;
-        std::vector<int> D;
-        std::vector<int> C;
-        std::vector<std::vector<int>> CKey1(FMT1);
-        int Gind = 0;
-        for(int j = 0; j < FMT1.size(); j++){
-            for(int k = 0; k < FMT1[j].size(); k++){
-                CKey1[j][k] = Gind;
-                N.push_back(Gind);
-                D.push_back(j);
-                C.push_back(FMT1[j][k]);
-                Gind++;
-                }
-        }
-        DKey1[0] = N;
-        DKey1[1] = D;
-        DKey1[2] = C;
-        
         std::vector<std::vector<int>> DKey2(3);
-        N.clear();
-        D.clear();
-        C.clear();
-        std::vector<std::vector<int>> CKey2(FMT2);
-        Gind = 0;
-        for(int j = 0; j < FMT2.size(); j++){
-            for(int k = 0; k < FMT2[j].size(); k++){
-                CKey2[j][k] = Gind;
-                N.push_back(Gind);
-                D.push_back(j);
-                C.push_back(FMT2[j][k]);
-                Gind++;
-                }
-        }
-        DKey2[0] = N;
-        DKey2[1] = D;
-        DKey2[2] = C;
+
         
         std::vector<std::vector<int>> CGraph1;
         std::vector<std::vector<int>> CGraph2;
+        
+        
+        Graphify(CGraph1, DKey1, FMT1);
+        Graphify(CGraph2, DKey2, FMT2);
 
-        int jLim = (FMT1.size()-1);
-        for(int j = 0; j<(FMT1.size()); j++){
-            for(int k = 0; k<FMT1[j].size(); k++){
-                
-                int CPar = FMT1[j][k];
-                
-                std::vector<int> CAdj;
-                if(jLim != j){
-                
-                for(int m = 0; m<FMT1[j+1].size(); m++){
-                    int CChil = FMT1[j+1][m];
-                    if(CPar < CChil){
-                        CAdj.push_back(CKey1[j+1][m]);
-                    }
-                }}
-                CGraph1.push_back(CAdj);
-        
-            }
-        }
-
-        
-        jLim = (FMT2.size()-1);
-        
-        for(int j = 0; j<(FMT2.size()); j++){
-            for(int k = 0; k<FMT2[j].size(); k++){
-                
-                int CPar = FMT2[j][k];
-                
-                std::vector<int> CAdj;
-                if(jLim != j){
-                for(int m = 0; m< FMT2[j+1].size(); m++){
-                    int CChil = FMT2[j+1][m];
-                    
-                    if(CPar < CChil){
-                        CAdj.push_back(CKey2[j+1][m]);
-                    }
-                    
-                }}
-                CGraph2.push_back(CAdj);
-            }
-        }
-        // Whoops need to translate the adjacency to the position in the vector.
-        // Now we need to add a way to give node "keys" for start and end points
         
         std::vector<std::vector<int>> Keys1 = KeyFinder(DKey1);
         std::vector<std::vector<int>> Keys2 = KeyFinder(DKey2);
+        
         
         
         std::vector<std::vector<int>> UnTLCSet1;
@@ -819,698 +942,74 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
 //            UnTLCSet2 = AllPathsDnC(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
 //        }
 //
-        
-        UnTLCSet1 = AllPathsDFSNaive(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen);
-        UnTLCSet2 = AllPathsDFSNaive(CGraph2, Keys2[0], Keys2[1], DKey2, lcslen);
-//        std::vector<std::vector<int>> UnTLCSet1 = AllPathsBFS(CGraph1, Keys1[0], Keys1[1]);
-//        std::vector<std::vector<int>> UnTLCSet2 = AllPathsBFS(CGraph2, Keys2[0], Keys2[1]);
-
-        //NodeLocConvert is helllla bugged.
-        // Currently has issues with some cases of LCS... maybe there's an upstream issue?
-        // Adjacency table is fine... Check traversal?
-        // Oh kill me and turn the corpse into proper fertilizer. It's in the DFS alg somewhere.
-        CSet1 = NodeLocConvert(UnTLCSet1, DKey1);
-        CSet2 = NodeLocConvert(UnTLCSet2, DKey2);
-        
-        
-        
-        //LCSConstructStepper(LCSset[i], FMT1, CSet1, Const1_, 0, 0, lcslen);
-        //LCSConstructStepper(LCSset[i], FMT2, CSet2, Const2_, 0, 0, lcslen);
-        // At this point, our CSets are built, our TSeq's are read in, we are as ready as we can be.
-        std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,std::vector<double>> LCSConst;
-
-
-
-        
-        // Construct selector will be replaced with a "raw" version that accounts for any included methods.
-        // We need to find a way to either evaluate as we go from this table or SOMETHING to make this faster.
-        // Put the logic switches in here
-        std::vector<double> BestDistVec;
-        std::vector<double> BestPhaseVec;
-        std::vector<double> BestStepVec;
+        std::vector<std::vector<std::vector<int>>> BestSet(3, std::vector<std::vector<int>>(2,std::vector<int>(lcslen,NAN)));
+        std::vector<std::vector<double>> tVec1(lcslen, std::vector<double> (2, NAN));
+        std::vector<std::vector<double>> tVec2(lcslen, std::vector<double> (2, NAN));
         double BestDist = NAN;
         double BestPhase = NAN;
         double BestStep = NAN;
-         
-        std::vector<std::vector<std::vector<std::vector<double>>>> BestConst(l);
-        std::vector<std::vector<double>> BestC1;
-        std::vector<std::vector<double>> BestC2;
+        std::vector<double> DistVec (lcslen, NAN);
+        std::vector<double> PhaseVec (lcslen, NAN);
+        std::vector<double> StepVec (lcslen, NAN);
+        double CurrDist = NAN;
+        double CurrPhase = NAN;
+        double CurrStep = NAN;
+        std::vector<int> Const1_(lcslen);
+        std::vector<int> Const2_(lcslen);
 
-       std::vector<std::vector<double>> tVec1;
-       std::vector<std::vector<double>> tVec2;
-       // Here is where the split into unknown territory begins
-        if(CSet1.size() == 1 && CSet2.size() == 1){
-            std::vector<std::vector<std::vector<double>>> ConstrTable1(1);
-            std::vector<std::vector<std::vector<double>>> ConstrTable2(1);
-            
-                     std::vector<std::vector<double>> TPairVec1(lcslen, std::vector<double>(2, NAN));
-                     
-                     for(int j = 0; j<CSet1[0].size(); j++){
-                         std::vector<double> TPair1(2, NAN);
-                         TPair1[0] = (TSeqArr1[CSet1[0][j]]);
-                         TPair1[1] = (TSeqDep1[CSet1[0][j]]);
-                         TPairVec1[j] = (TPair1);
-                     }
-                     ConstrTable1[0] = (TPairVec1);
-                 
-                 
-                    std::vector<std::vector<double>> TPairVec2(lcslen, std::vector<double>(2, NAN));
-                     
-                     for(int j = 0; j<CSet2[0].size(); j++){
-                         std::vector<double> TPair2(2, NAN);
-                         TPair2[0] = (TSeqArr2[CSet2[0][j]]);
-                         TPair2[1] = (TSeqDep2[CSet2[0][j]]);
-                         TPairVec2[j] = (TPair2);
-                     }
-                     ConstrTable2[0] = (TPairVec2);
-                 
-            for(int k = 0; k < l; k++){
-            // Assemble the output and end this
-            BestC1.insert(BestC1.end(),ConstrTable1[0].begin(),ConstrTable1[0].end());
-            BestC2.insert(BestC2.end(),ConstrTable2[0].begin(),ConstrTable2[0].end());
-            BestConst[k].push_back(BestC1);
-            BestConst[k].push_back(BestC2);
+        DFSOuter(CGraph1, Keys1[0], Keys1[1], DKey1, lcslen, CGraph2, Keys2[0], Keys2[1], DKey2, Const1_, Const2_, BestSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, tVec1, tVec2, BestDist, BestPhase, BestStep, DistLUT, DiffLUT, StepLUT, DistVec, PhaseVec, StepVec, CurrDist, CurrPhase, CurrStep);
+
+
+        std::vector<std::string> LCSString = LCSStringify(LCSset[i], lcslen, LocLib);
+        
+        
+                     //End of the loop through each LCS, save the least squares distance through time for each "best constructor" for each LCS
+        for(int k = 0; k < 3; k++){
+            std::vector<std::vector<double>> tOutVec1(lcslen, std::vector<double>(2,NAN));
+            std::vector<std::vector<double>> tOutVec2(lcslen, std::vector<double>(2,NAN));
+            for(int l = 0; l < lcslen; l++){
+                tOutVec1[l][0] = TSeqArr1[BestSet[k][0][l]];
+                tOutVec1[l][1] = TSeqDep1[BestSet[k][0][l]];
+                tOutVec2[l][0] = TSeqArr2[BestSet[k][1][l]];
+                tOutVec2[l][1] = TSeqDep2[BestSet[k][1][l]];
             }
-                
-                for(int i = 0; i<ConstrTable1.size(); i++){
-                    tVec1 = ConstrTable1[i];
+            std::vector<double> OutDissim (lcslen, NAN);
+            double Met = NAN;
+            double MetSum = NAN;
+            if(k == 0){
+                for(int l = 0; l<lcslen; l++){
                     
-                    for(int j = 0; j<ConstrTable2.size(); j++){
-                        std::vector<double> DistVec(lcslen, NAN);
-                        std::vector<double> PhaseVec(lcslen, NAN);
-                        std::vector<double> StepVec(lcslen, NAN);
-                        tVec2 = ConstrTable2[j];
-                        
-                        std::vector<double> DiffVec(lcslen, NAN);
-                        double DiffMean;
-                        for(int k = 0; k<ConstrTable1[0].size(); k++){
-                            if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                            DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                            } else {
-                                DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                            }
-                        }
-                        
-                        double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                        DiffMean = DiffSum / (2 * DiffVec.size());
-                        
-                        if(!(DistLUT[CSet1[0][0]][CSet2[0][0]] > 0)){
-                        DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                            DistLUT[CSet1[0][0]][CSet2[0][0]] = DistVec[0];
-                        } else{
-                            DistVec[0] = DistLUT[CSet1[0][0]][CSet2[0][0]];
-                        }
-                        
-                        PhaseVec[0] = (std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
-
-                        StepVec[0] = (0);
-                        
-                        
-                        
-                        for(int k = 1; k<lcslen; k++){
-                            
-                            if(!(DistLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                            DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                DistLUT[CSet1[0][k]][CSet2[0][k]] = DistVec[k];
-                            } else {
-                                DistVec[k] = DistLUT[CSet1[0][k]][CSet2[0][k]];
-                            }
-                            
-                            PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                            
-                            if(!(StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]] > 0)){
-                            StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]] = StepVec[k];
-                            } else {
-                                StepVec[k] = StepLUT[CSet1[0][k-1]][CSet1[0][k]][CSet2[0][k-1]][CSet2[0][k]];
-                            }
-                            
-                        }
-                        
-                        BestDist = std::accumulate(DistVec.begin(), DistVec.end(), 0LL);
-
-                        BestPhase = std::accumulate(PhaseVec.begin(), PhaseVec.end(), 0LL);
-
-                        BestStep = std::accumulate(StepVec.begin(), StepVec.end(), 0LL);
-
+                    if(!(DistLUT[BestSet[k][0][l]][BestSet[k][1][l]] > 0)){
+                        OutDissim[l] = ConDist(tOutVec1, tOutVec2, l);;
+                        DistLUT[BestSet[k][0][l]][BestSet[k][1][l]] = OutDissim[l];
+                    } else {
+                        OutDissim[l] = DistLUT[BestSet[k][0][l]][BestSet[k][1][l]];
                     }
                 }
-        } else {
-/*
- 
-    
-         for(int i = 0; i<CSet1.size(); i++){
-                 for(int k = 0; i<CSet2.size(); i++){
-
-                 std::vector<std::vector<double>> TPairVec1;
-
-                 std::vector<std::vector<double>> TPairVec2;
- std::vector<double> DistVec;
- std::vector<double> PhaseVec;
- std::vector<double> StepVec;
-                         for(int j = 0; j<CSet1[0].size(); j++){
-                             std::vector<double> TPair1;
-                             TPair1.push_back(TSeqArr1[CSet1[i][j]]);
-                             TPair1.push_back(TSeqDep1[CSet1[i][j]]);
-                             TPairVec1.push_back(TPair1);
-                             std::vector<double> TPair2;
-                             TPair2.push_back(TSeqArr2[CSet2[k][j]]);
-                             TPair2.push_back(TSeqDep2[CSet2[k][j]]);
-                             TPairVec2.push_back(TPair2);
-                         }
-                 // Evaluation and storage terms here.
-             
-         }}
-         
-
- */
-                    // METHODS DIFFERENTIATION SECTION
-                     
-
-                     if(std::find(Method.begin(), Method.end(), "LeastDist") != Method.end()){
-                         if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                             if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                                 // All three goes here
-                                 BestDist = NAN;
-                                 BestPhase = NAN;
-                                 BestStep = NAN;
-                                 
-                                 for(int i = 0; i<CSet1.size(); i++){
-                                         for(int j = 0; j<CSet2.size(); j++){
-                                             
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> DistVec(lcslen, NAN);
-                                             std::vector<double> PhaseVec(lcslen, NAN);
-                                             std::vector<double> StepVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                             std::vector<double> DiffVec(lcslen, NAN);
-                                             double DiffMean;
-                                             for(int k = 0; k<lcslen; k++){
-                                                 if(!(DiffLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                                 DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                     DiffLUT[CSet1[i][k]][CSet2[j][k]] = DiffVec[k];
-                                                 } else {
-                                                     DiffVec[k] = DiffLUT[CSet1[i][k]][CSet2[j][k]];
-                                                 }
-                                             }
-                                             
-                                             double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                             DiffMean = DiffSum / (2 * DiffVec.size());
-                                             
-                                             if(!(DistLUT[CSet1[i][0]][CSet2[j][0]] > 0)){
-                                             DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                                                 DistLUT[CSet1[i][0]][CSet2[j][0]] = DistVec[0];
-                                             } else{
-                                                 DistVec[0] = DistLUT[CSet1[i][0]][CSet2[j][0]];
-                                             }
-                                             
-                                             PhaseVec[0] = (std::pow((tVec1[0][0]-tVec2[0][0] - DiffMean), 2)  +  std::pow((tVec1[0][1]-tVec2[0][1] - DiffMean), 2));
-                                             
-                                             StepVec[0] = (0);
-                                             
-                                         for(int k = 1; k<lcslen; k++){
-                                             
-                                             if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                                             
-                                             PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                                             
-                                             if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                             StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                                 StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                             } else {
-                                                 StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                             }
-                                         }
-                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                         double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                         if(!(BestDist < CurrDist)){
-                                             BestDist = CurrDist;
-                                             BestConsts[0][0] = i;
-                                             BestConsts[0][1] = j;
-//                                             BestDistVec = DistVec;
-                                         }
-                                         if(!(BestPhase < CurrPhase)){
-                                             BestPhase = CurrPhase;
-                                             BestConsts[1][0] = i;
-                                             BestConsts[1][1] = j;
-//                                             BestPhaseVec = PhaseVec;
-                                         }
-                                         if(!(BestStep < CurrStep)){
-                                             BestStep = CurrStep;
-                                             BestConsts[2][0] = i;
-                                             BestConsts[2][1] = j;
-//                                             BestStepVec = StepVec;
-                                         }
-                                     }
-                                 }
-                             } else {
-                                 // LeastDist and PhaSim goes here
-                                 BestDist = NAN;
-                                 BestPhase = NAN;
-                                 for(int i = 0; i<CSet1.size(); i++){
-                                         for(int j = 0; j<CSet2.size(); j++){
-
-                                             std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                                 std::vector<double> DistVec(lcslen, NAN);
-                                                 std::vector<double> PhaseVec(lcslen, NAN);
-
-                                                     for(int m = 0; m<lcslen; m++){
-                                                         std::vector<double> TPair1(2, NAN);
-                                                         TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                         TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                         tVec1[m] = TPair1;
-                                                         std::vector<double> TPair2(2, NAN);
-                                                         TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                         TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                         tVec2[m] = TPair2;
-                                                     }
-                                                 
-                                                 std::vector<double> DiffVec(lcslen, NAN);
-                                             double DiffMean;
-                                             for(int k = 0; k<lcslen; k++){
-                                                    if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                                                        DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                        DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                                                    } else {
-                                                        DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                                                    }
-                                             }
-                                             
-                                             double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                             DiffMean = DiffSum / (2 * DiffVec.size());
-                                             
-                                             
-                                         for(int k = 0; k<lcslen; k++){
-                                             if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                                             
-                                             PhaseVec[k] = (std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
-                                         }
-                                         double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                                         double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                         if(!(BestDist < CurrDist)){
-                                             BestDist = CurrDist;
-                                             BestConsts[0][0] = i;
-                                             BestConsts[0][1] = j;
-//                                             BestDistVec = DistVec;
-                                         }
-                                         if(!(BestPhase < CurrPhase)){
-                                             BestPhase = CurrPhase;
-                                             BestConsts[1][0] = i;
-                                             BestConsts[1][1] = j;
-//                                             BestPhaseVec = PhaseVec;
-                                         }
-                                     }
-                                 }
-                             }
-                         } else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                             // LeastDist and LeastStep goes here
-                            BestDist = NAN;
-                            BestStep = NAN;
-                             
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> DistVec(lcslen, NAN);
-                                             std::vector<double> StepVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                         
-                                         if(!(DistLUT[CSet1[0][0]][CSet2[0][0]] > 0)){
-                                         DistVec[0] = ((std::pow((tVec1[0][0] - tVec2[0][0]), 2) /2) + (std::pow((tVec1[0][1]-tVec2[0][1]),2) /2));
-                                             DistLUT[CSet1[0][0]][CSet2[0][0]] = DistVec[0];
-                                         } else{
-                                             DistVec[0] = DistLUT[CSet1[0][0]][CSet2[0][0]];
-                                         }
-                                                                                  
-                                         StepVec[0] = (0);
-                                         
-                                     for(int k = 1; k<lcslen; k++){
-                                         if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                                         
-                                         if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                         StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                             StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                         } else {
-                                             StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                         }
-                                     }
-                                     double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                     
-                                     if(!(BestDist < CurrDist)){
-                                         BestDist = CurrDist;
-                                         BestConsts[0][0] = i;
-                                         BestConsts[0][1] = j;
-//                                         BestDistVec = DistVec;
-                                     }
-
-                                     if(!(BestStep < CurrStep)){
-                                         BestStep = CurrStep;
-                                         BestConsts[1][0] = i;
-                                         BestConsts[1][1] = j;
-//                                         BestStepVec = StepVec;
-                                     }
-                                 }
-                             }
-                         } else {
-                      // Just LeastDist goes here
-                      BestDist = NAN;
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> DistVec(lcslen, NAN);
-
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                              for(int k = 0; k<lcslen; k++){
-                                  if(!(DistLUT[CSet1[i][k]][CSet2[j][k]] > 0)){
-                                             DistVec[k] = ((std::pow((tVec1[k][0] - tVec2[k][0]), 2) /2) + (std::pow((tVec1[k][1]-tVec2[k][1]),2) /2));
-                                                 DistLUT[CSet1[i][k]][CSet2[j][k]] = DistVec[k];
-                                             } else {
-                                                 DistVec[k] = DistLUT[CSet1[i][k]][CSet2[j][k]];
-                                             }
-                              }
-                              double CurrDist = std::accumulate(DistVec.begin(),DistVec.end(),0LL);
-                              if(!(BestDist < CurrDist)){
-                                  BestDist = CurrDist;
-                                  BestConsts[0][0] = i;
-                                  BestConsts[0][1] = j;
-//                                  BestDistVec = DistVec;
-                              }
-                          }
-                      }}
-                         
-                     } else if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                         if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                             // PhaSim and LeastStep goes here
-                              BestPhase = NAN;
-                              BestStep = NAN;
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> PhaseVec(lcslen, NAN);
-                                             std::vector<double> StepVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                             std::vector<double> DiffVec(lcslen, NAN);
-                                         double DiffMean;
-                                         for(int k = 0; k<lcslen; k++){
-                                                if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                                                    DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                    DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                                                } else {
-                                                    DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                                                }
-                                         }
-                                         
-                                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                         DiffMean = DiffSum / (2 * DiffVec.size());
-                                         
-                                         PhaseVec[0] = (std::pow(tVec1[0][0]-tVec2[0][0] - DiffMean, 2)  +  std::pow(tVec1[0][1]-tVec2[0][1] - DiffMean, 2));
-                                         
-                                         StepVec[0] = (0);
-                                         
-                                     for(int k = 1; k<lcslen; k++){
-                                         PhaseVec[k] = (std::pow(tVec1[k][0]-tVec2[k][0] - DiffMean, 2)  +  std::pow(tVec1[k][1]-tVec2[k][1] - DiffMean, 2));
-                                         
-                                         if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                         StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                             StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                         } else {
-                                             StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                         }
-                                     }
-                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                     double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                     if(!(BestPhase < CurrPhase)){
-                                         BestPhase = CurrPhase;
-                                         BestConsts[0][0] = i;
-                                         BestConsts[0][1] = j;
-//                                         BestPhaseVec = PhaseVec;
-                                     }
-                                     if(!(BestStep < CurrStep)){
-                                         BestStep = CurrStep;
-                                         BestConsts[1][0] = i;
-                                         BestConsts[1][1] = j;
-//                                         BestStepVec = StepVec;
-                                     }
-                                 }
-                             }
-                         } else{
-                             // Just PhaSim goes here
-                              BestPhase = NAN;
-                             for(int i = 0; i<CSet1.size(); i++){
-                                     for(int j = 0; j<CSet2.size(); j++){
-
-                                         std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                             std::vector<double> PhaseVec(lcslen, NAN);
-                                                 for(int m = 0; m<lcslen; m++){
-                                                     std::vector<double> TPair1(2, NAN);
-                                                     TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                     TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                     tVec1[m] = TPair1;
-                                                     std::vector<double> TPair2(2, NAN);
-                                                     TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                     TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                     tVec2[m] = TPair2;
-                                                 }
-                                             
-                                             std::vector<double> DiffVec(lcslen, NAN);
-                                         double DiffMean;
-                                         for(int k = 0; k<lcslen; k++){
-                                                if(!(DiffLUT[CSet1[0][k]][CSet2[0][k]] > 0)){
-                                                    DiffVec[k] = ((tVec1[k][0] - tVec2[k][0]) + (tVec1[k][1] - tVec2[k][1]));
-                                                    DiffLUT[CSet1[0][k]][CSet2[0][k]] = DiffVec[k];
-                                                } else {
-                                                    DiffVec[k] = DiffLUT[CSet1[0][k]][CSet2[0][k]];
-                                                }
-                                         }
-                                         
-                                         double DiffSum = std::accumulate(DiffVec.begin(), DiffVec.end(), 0LL);
-                                         DiffMean = DiffSum / (2 * DiffVec.size());
-                                         
-                                     for(int k = 0; k<lcslen; k++){
-                                         PhaseVec[k] = (std::pow((tVec1[k][0]-tVec2[k][0] - DiffMean), 2)  +  std::pow((tVec1[k][1]-tVec2[k][1] - DiffMean), 2));
-                                         
-                                     }
-                                     double CurrPhase = std::accumulate(PhaseVec.begin(),PhaseVec.end(),0LL);
-                                     if(!(BestPhase < CurrPhase)){
-                                         BestPhase = CurrPhase;
-                                         BestConsts[0][0] = i;
-                                         BestConsts[0][1] = j;
-//                                         BestPhaseVec = PhaseVec;
-                                     }
-                                     }
-                                 }
-                             }
-                     } else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                         // Just LeastStep goes here
-                          BestStep = NAN;
-                         for(int i = 0; i<CSet1.size(); i++){
-                                 for(int j = 0; j<CSet2.size(); j++){
-
-                                     std::vector<std::vector<double>> tVec1(lcslen,std::vector<double> (2, NAN));
-
-                                     std::vector<std::vector<double>> tVec2(lcslen,std::vector<double> (2, NAN));
-
-                                         std::vector<double> StepVec(lcslen, NAN);
-                                             for(int m = 0; m<lcslen; m++){
-                                                 std::vector<double> TPair1(2, NAN);
-                                                 TPair1[0] = TSeqArr1[CSet1[i][m]];
-                                                 TPair1[1] = TSeqDep1[CSet1[i][m]];
-                                                 tVec1[m] = TPair1;
-                                                 std::vector<double> TPair2(2, NAN);
-                                                 TPair2[0] = TSeqArr2[CSet2[j][m]];
-                                                 TPair2[1] = TSeqDep2[CSet2[j][m]];
-                                                 tVec2[m] = TPair2;
-                                             }
-                                     
-                                     StepVec[0] = (0);
-                                     
-                                 for(int k = 1; k<lcslen; k++){
-                                     if(!(StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] > 0)){
-                                     StepVec[k] = ((std::pow((tVec1[k][0]-tVec1[k-1][1]) - (tVec2[k][0]-tVec2[k-1][1]),2)/2)  + (std::pow((tVec1[k][1]-tVec1[k][0]) - (tVec2[k][1]-tVec2[k][0]), 2)/2));
-                                         StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]] = StepVec[k];
-                                     } else {
-                                         StepVec[k] = StepLUT[CSet1[i][k-1]][CSet1[i][k]][CSet2[j][k-1]][CSet2[j][k]];
-                                     }
-                                 }
-                                 double CurrStep = std::accumulate(StepVec.begin(),StepVec.end(),0LL);
-                                 if(!(BestStep < CurrStep)){
-                                     BestStep = CurrStep;
-                                     BestConsts[0][0] = i;
-                                     BestConsts[0][1] = j;
-//                                     BestStepVec = StepVec;
-                                 }
-                             }
-                         }
-                         
-                     }
-
-                      // By the end of this loop, we have the two best constructors for each sequence
-
-                      std::vector<std::vector<std::vector<std::vector<double>>>> BestPair(l, std::vector<std::vector<std::vector<double>>>(2));
-                     for(int f = 0; f < l; f++){
-                         // We'd need to build this specific case of Constr Table a lil differently, but it's manageable!
-
-                         
-                             std::vector<std::vector<double>> TPairVec1(lcslen, std::vector<double>(2, NAN));
-                             
-                             for(int j = 0; j<lcslen; j++){
-                                 std::vector<double> TPair1(2, NAN);
-                                 TPair1[0] = (TSeqArr1[CSet1[BestConsts[f][0]][j]]);
-                                 TPair1[1] = (TSeqDep1[CSet1[BestConsts[f][0]][j]]);
-                                 TPairVec1[j] = (TPair1);
-                             }
-                            
-                         
-                         
-                         
-                         std::vector<std::vector<double>> TPairVec2(lcslen, std::vector<double>(2, NAN));
-                             
-                             for(int j = 0; j<CSet2[0].size(); j++){
-                                 std::vector<double> TPair2(2, NAN);
-                                 TPair2[0] = (TSeqArr2[CSet2[BestConsts[f][1]][j]]);
-                                 TPair2[1] = (TSeqDep2[CSet2[BestConsts[f][1]][j]]);
-                                 TPairVec2[j] = (TPair2);
-                             }
-                             
-                         
-                      BestPair[f][0] = (TPairVec1);
-                      BestPair[f][1] = (TPairVec2);
+                    
+            } else if(k == 1){
+                double DiffMeanOut = DiffM(tOutVec1, tOutVec2, BestSet[k][0], BestSet[k][1], DiffLUT);
+                for(int l = 0; l<lcslen; l++){
+                    OutDissim[l] = ConPhase(tOutVec1, tOutVec2, l, DiffMeanOut);
+                }
+                
+            } else if(k == 2){
+                OutDissim[0] = 0;
+                for(int l = 1; l<lcslen; l++){
+                    if(!(StepLUT[BestSet[k][0][l-1]][BestSet[k][0][l]][BestSet[k][1][l-1]][BestSet[k][1][l]] > 0)){
+                        OutDissim[l] = ConStep(tOutVec1, tOutVec2, l);
+                        StepLUT[BestSet[k][0][l-1]][BestSet[k][0][l]][BestSet[k][1][l-1]][BestSet[k][1][l]] = OutDissim[l];
+                    } else {
+                        OutDissim[l] = StepLUT[BestSet[k][0][l-1]][BestSet[k][0][l]][BestSet[k][1][l-1]][BestSet[k][1][l]];
                     }
-                      BestConst = BestPair;
-                 }
-        
-        
-                 std::vector<std::string> LCSString = LCSStringify(LCSset[i], lcslen, LocLib);
-                 
-        std::vector<double> OffVec(l);
-        // Here we can use find() to define OffVec
-        std::vector<double> OffSum(l);
-        if(std::find(Method.begin(), Method.end(), "LeastDist") != Method.end()){
-            if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-                    
-
-                    OffVec[0] = BestDist / lcslen;
-
-                    OffVec[1] = BestPhase / lcslen;
-
-                    OffVec[2] = BestStep / lcslen;
-
-                } else {
-
-                    OffVec[0] = BestDist / lcslen;
-
-                    OffVec[1] = BestPhase / lcslen;
-
-                }} else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-
-
-                    OffVec[0] = BestDist / lcslen;
-
-                    OffVec[1] = BestStep / lcslen;
-                    
-                } else {
-
-                    OffVec[0] = BestDist / lcslen;
-
-                }} else if(std::find(Method.begin(), Method.end(), "PhaSim") != Method.end()){
-                    if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-
-                        OffVec[0] = BestPhase / lcslen;
-
-                        OffVec[1] = BestStep / lcslen;
-
-                    } else{
-
-                        OffVec[0] = BestPhase / lcslen;
-
-                    }} else if(std::find(Method.begin(), Method.end(), "LeastStep") != Method.end()){
-
-                        OffVec[0] = BestStep / lcslen;
-        }
-                     //End of the loop through each LCS, save the least squares distance through time for each "best constructor" for each LCS
-        for(int k = 0; k < l; k++){
+                }
+            }
+            
+            MetSum = std::accumulate(OutDissim.begin(), OutDissim.end(), 0LL);
+            Met = (MetSum / OutDissim.size());
 
             
-                 std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double> CombinedConst = std::make_tuple(LCSString, BestConst[k][0], BestConst[k][1], OffVec[k]);
+                 std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double> CombinedConst = std::make_tuple(LCSString, tOutVec1, tOutVec2, Met);
                  
 
             Candidates[k].push_back(CombinedConst);
@@ -1523,7 +1022,7 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
     for(int i = 0; i<Candidates[k].size(); i++){
         AggDist.push_back(std::get<3>(Candidates[k][i]));
     }
-        // There's at least one bug in here.
+        
     auto BestTarget = std::min_element(AggDist.begin(), AggDist.end());
     int BestCand = std::distance(AggDist.begin(),BestTarget);
     PullSet.push_back(Candidates[k][BestCand]);
@@ -1536,7 +1035,7 @@ void LCSConstructHunt(std::vector<std::vector<int>> LCSset, std::vector<int> Fis
 
 
 
-std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> FullLCSExtractor(std::vector<int> Fish1Seq, std::vector<int> Fish2Seq/*, int argc, char** argv*/, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib){
+std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> FullLCSExtractor(std::vector<int> Fish1Seq, std::vector<int> Fish2Seq/*, int argc, char** argv*/, std::vector<double> TSeqArr1, std::vector<double> TSeqDep1, std::vector<double> TSeqArr2, std::vector<double> TSeqDep2, std::vector<std::string> Method, std::vector<std::string> LocLib, int PruneThreshC, int PruneThreshLev){
     int Size1;
     int Size2;
     
@@ -1571,24 +1070,36 @@ std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>
     std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> PullSet;
 
     PullAll(Fish1Seq, Fish2Seq, Size1, Size2, data, 0, 0, 0, LCSset, lcslen, DPmat/*PullSet, F1Index, F2Index*/);
+    // PullAll is doing something funky and I have no clue why... so we're going to cheat bit using a set.
+    
+    std::set<std::vector<int>> TempLCS;
+    for(auto it = LCSset.begin(); it < LCSset.end(); it++){
+        TempLCS.insert(*it);
+    }
+    
+    LCSset.clear();
+    
+    for(auto it = TempLCS.begin(); it != TempLCS.end(); it++){
+        LCSset.push_back(*it);
+    }
     
    // std::cout << "It got this far" << "\n";
     // std::cout << PullSet[0][0][0] << PullSet[0][0][1] << PullSet[0][0][2] << PullSet[0][0][3] << "\n";
     // std::cout << PullSet[0][1][0] << PullSet[0][1][1] << PullSet[0][1][2] << PullSet[0][1][3] << "\n";
     // std::cout << PullSet[0][2][0] << PullSet[0][2][1] << PullSet[0][2][2] << PullSet[0][2][3] << "\n";
     // LCSset now contains every LCS, need to add a utility/pair of utilities for comparing against vectors of strings to find constructors and staple combinations of {vector(LCS),vector(F1Construct),vector(F2Construct)} onto PullSet
+    
     std::vector<std::string> Methods;
     if(Method[0].compare("All") == 0){
       Methods = {"LeastDist","PhaSim","LeastStep"};
     } else{
       Methods = Method;
     }
-    LCSConstructHunt(LCSset, Fish1Seq, Fish2Seq, PullSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Methods, LocLib, lcslen, Size1, Size2);
+    LCSConstructHunt(LCSset, Fish1Seq, Fish2Seq, PullSet, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Methods, LocLib, lcslen, Size1, Size2, PruneThreshC, PruneThreshLev);
     //ConstructHunt will select one option to output as PullSet, which it will use part of the artist formerly known as LCSStapler to convert the integer LCS into the string LCS for.
     
     return PullSet;
 }
-
 
 
 std::string Dble2Str(double Dble){
@@ -1722,6 +1233,9 @@ SEXP LCSExtract(SEXP Fish1Sequence, SEXP Fish2Sequence, SEXP TSeqArr1_, SEXP TSe
     std::vector<int> Fish1Seq;
     std::vector<int> Fish2Seq;
     
+    int PruneThreshC = 5;
+    int PruneThreshLev = 4;
+    
     IntLibConverter(Fish1Seq_,Fish2Seq_,Fish1Seq,Fish2Seq,LocLib);
     //std::string dbm = as<String>(Debug);
    /* Rcpp::CharacterVector DbM(Debug);*/
@@ -1729,7 +1243,7 @@ SEXP LCSExtract(SEXP Fish1Sequence, SEXP Fish2Sequence, SEXP TSeqArr1_, SEXP TSe
 
     
     // step 1: call the underlying C++ function
-    std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> LeastComm = FullLCSExtractor(Fish1Seq, Fish2Seq, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Method, LocLib);
+    std::vector<std::tuple<std::vector<std::string>,std::vector<std::vector<double>>,std::vector<std::vector<double>>,double>> LeastComm = FullLCSExtractor(Fish1Seq, Fish2Seq, TSeqArr1, TSeqDep1, TSeqArr2, TSeqDep2, Method, LocLib, PruneThreshC, PruneThreshLev);
 
     //Convert all the objects in the tuple over to a uniform d vector of strings.
     //TestPrint(LeastComm);
