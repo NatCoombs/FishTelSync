@@ -249,7 +249,7 @@ LCSCole09<-LCSCalc(CNFHChinDense, ColemanPairs[[2]])
 saveRDS(LCSCole09, "Data/LCSCole09.rds")
 LCSCole102<-LCSCalc(CNFHChinDense, ColemanPairs[[3]])
 saveRDS(LCSCole102, "Data/LCSCole102.rds")
-
+LCSCole102 <- readRDS("Data/LCSCole102.rds")
 
 ColeTable101<-MarkovFishTable(CNFHChinDense[CNFHChinDense$FishID %in% ColemanIDs[[1]],], "FishID", "Loc", "FirstDet","LastDet")
 saveRDS(ColeTable101, "Data/ColeTable101.rds")
@@ -266,13 +266,14 @@ Cole09Surr<-MarkovFishSurrogates(ColeTable09, "BtlCkCNFHWeir",0,1000,Reps = 1)
 saveRDS(Cole09Surr, "Data/Cole09Surr.rds")
 Cole102Surr<-MarkovFishSurrogates(ColeTable102, "BtlCkCNFHWeir",0,1000,Reps = 1)
 saveRDS(Cole102Surr, "Data/Cole102Surr.rds")
+Cole102Surr <- readRDS("Data/Cole102Surr.rds")
 #library(wsyn)
-Cole101PopTest<-MFPop(LCSCole101, ColemanPairs[[1]], Cole101Surr[[1]],100)
+Cole101PopTest<-MFPop(LCSCole101, ColemanPairs[[1]], Cole101Surr[[1]],1000)
 saveRDS(Cole101PopTest, "Data/Cole101PopTest.rds")
 Cole101PopTest <- readRDS("Data/Cole101PopTest.rds")
-Cole09PopTest<-MFPop(LCSCole09, ColemanPairs[[2]], Cole09Surr[[1]],100)
+Cole09PopTest<-MFPop(LCSCole09, ColemanPairs[[2]], Cole09Surr[[1]],1000)
 saveRDS(Cole09PopTest, "Data/Cole09PopTest.rds")
-Cole102PopTest<-MFPop(LCSCole102, ColemanPairs[[3]], Cole102Surr[[1]],100)
+Cole102PopTest<-MFPop(LCSCole102, ColemanPairs[[3]], Cole102Surr[[1]],1000)
 saveRDS(Cole102PopTest, "Data/Cole102PopTest.rds")
 Cole102PopTest <- readRDS("Data/Cole102PopTest.rds")
 
@@ -388,6 +389,8 @@ text(x = 1/Cole102PopTest[[1]][1,3] + 5E-11, y = 15, labels = paste("p = ", Rank
 
 mean((1/Cole102PopTest[[1]][1,3]) < (1/Cole102PopTest[[3]][[1]][,3]))
 mean(Cole102PopTest[[1]][1,3] > Cole102PopTest[[3]][[1]][,3])
+
+
 
 LCSExtract(CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,1],"Loc"],
            CNFHChinDense[CNFHChinDense$FishID %in% ColemanPairs[[1]][2206,2],"Loc"],

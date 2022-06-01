@@ -25,9 +25,10 @@ LCSCalc<-function(DenseTable, PairSet){
                                      as.numeric(DenseTable[Key2,"FirstDet"]),
                                      as.numeric(DenseTable[Key2,"LastDet"]),
                                      c("All"))
-    cat(Printdex, " ")
-    
+    #cat(Printdex, " ")
+    #Sys.sleep(.1)
     Printdex <- Printdex+1
   }
   return(LCSList)
 }
+
