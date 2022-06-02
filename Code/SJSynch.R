@@ -323,18 +323,21 @@ for(i in 1:length(SJSRels)){
 }
 saveRDS(SJSSurrs, "Data/SJSSurrs.rds")
 
-
+SJCSurrs<-readRDS("Data/SJCSurrs.rds")
+SJSSurrs<-readRDS("Data/SJSSurrs.rds")
+SJCSynch<-readRDS("Data/SJCSynch.rds")
+SJSSynch<-readRDS("Data/SJSSynch.rds")
 source("Code/Functions/MFPop.R")
 SJCPop<-vector(mode = "list", length = length(SJCRels))
 
 SJSPop<-vector(mode = "list", length = length(SJSRels))
 
 for(i in 1:length(SJCRels)){
-  SJCPop[[i]] <- MFPop(SJCSynch[[i]],SJCPairs[[i]],SJCSurrs[[i]][[1]], 1000)
+  SJCPop[[i]] <- MFPop(SJCSynch[[i]],SJCPairs[[i]],SJCSurrs[[i]][[1]], 100)
 }
 saveRDS(SJCPop, "Data/SJCPop.rds")
 
 for(i in 1:length(SJSRels)){
-  SJSPop[[i]] <- MFPop(SJCSynch[[i]],SJCPairs[[i]],SJCSurrs[[i]][[1]], 1000)
+  SJSPop[[i]] <- MFPop(SJCSynch[[i]],SJCPairs[[i]],SJCSurrs[[i]][[1]], 100)
 }
 saveRDS(SJSPop, "Data/SJSPop.rds")
