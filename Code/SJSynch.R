@@ -95,6 +95,10 @@ DetCondenseSurrog <- function(DetFrame){
 # Script for testing synchrony of the San Joaquin "surrogacy" questions
 
 
+
+
+
+
 SJChin<-read.csv("Data/ChinookEventsFormatted/ALL_South_Delta_fall_Chinook_events_formatted_20220407.csv")
 SJSteel<-read.csv("Data/SteelheadEventsFormatted/ALL_South_Delta_fall_Steelhead_events_formatted_20220415.csv")
 
@@ -341,3 +345,78 @@ for(i in 1:length(SJSRels)){
   SJSPop[[i]] <- MFPop(SJCSynch[[i]],SJCPairs[[i]],SJCSurrs[[i]][[1]], 100)
 }
 saveRDS(SJSPop, "Data/SJSPop.rds")
+
+
+# Distance stuff
+SJDist<-read.csv("Data/Distance_matrix_SJ.csv")
+rownames(SJDist) <- SJDist[,1]
+SJDist<-SJDist[,-1]
+
+SJCSynch<-readRDS("Data/SJCSynch.rds")
+SJSSynch<-readRDS("Data/SJSSynch.rds")
+
+
+SJCDistTable<-matrix(ncol = 7)
+for(i in 1:length(SJCSynch)){
+  Temp<-DistList(SJCSynch[[i]],SJDist)
+  Temp<-cbind(Temp, rep_len(i, dim(Temp)[1]))
+  SJCDistTable<-rbind(SJCDistTable,Temp)
+}
+SJCDistTable<-na.omit(SJCDistTable)
+
+
+
+SJSDistTable<-matrix(ncol = 7)
+for(i in 1:length(SJSSynch)){
+  Temp<-DistList(SJSSynch[[i]],SJDist)
+  Temp<-cbind(Temp, rep_len(i, dim(Temp)[1]))
+  SJSDistTable<-rbind(SJSDistTable,Temp)
+}
+SJSDistTable<-na.omit(SJSDistTable)
+
+pdf("Intermediate Stuff/PrelimDistSynchSJ.pdf")
+par(mfrow=c(3,1))
+
+plot(SJCDistTable[,4],SJCDistTable[,1], main = "Direct Chinook")
+plot(SJCDistTable[,5],SJCDistTable[,2], main = "Phase Chinook")
+plot(SJCDistTable[,6],SJCDistTable[,3], main = "Step Chinook")
+
+plot(SJSDistTable[,4],SJSDistTable[,1], main = "Direct Steelhead")
+plot(SJSDistTable[,5],SJSDistTable[,2], main = "Phase Steelhead")
+plot(SJSDistTable[,6],SJSDistTable[,3], main = "Step Steelhead")
+
+par(mfrow=c(1,1))
+dev.off()
+
+
+SteelTermMat<-matrix(ncol = 3, nrow = (length(unlist(SJSPairs))/2))
+colnames(SteelTermMat)<-c("Dir","Pha","Ste")
+MatDex<-1
+for(i in 1:length(SJSSynch)){
+  SubSynch<-SJSSynch[[i]]
+  for(j in 1:length(SubSynch)){
+    SteelTermMat[MatDex,1]<-SubSynch[[j]][[2]][length(SubSynch[[j]][[2]])]
+    SteelTermMat[MatDex,2]<-SubSynch[[j]][[9]][length(SubSynch[[j]][[9]])]
+    SteelTermMat[MatDex,3]<-SubSynch[[j]][[16]][length(SubSynch[[j]][[16]])]
+    MatDex<-MatDex+1
+  }
+}
+table(SteelTermMat[,1])
+table(SteelTermMat[,2])
+table(SteelTermMat[,3])
+
+ChinTermMat<-matrix(ncol = 3, nrow = (length(unlist(SJCPairs))/2))
+colnames(ChinTermMat)<-c("Dir","Pha","Ste")
+MatDex<-1
+for(i in 1:length(SJCSynch)){
+  SubSynch<-SJCSynch[[i]]
+  for(j in 1:length(SubSynch)){
+    ChinTermMat[MatDex,1]<-SubSynch[[j]][[2]][length(SubSynch[[j]][[2]])]
+    ChinTermMat[MatDex,2]<-SubSynch[[j]][[9]][length(SubSynch[[j]][[9]])]
+    ChinTermMat[MatDex,3]<-SubSynch[[j]][[16]][length(SubSynch[[j]][[16]])]
+    MatDex<-MatDex+1
+  }
+}
+table(ChinTermMat[,1])
+table(ChinTermMat[,2])
+table(ChinTermMat[,3])

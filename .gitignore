@@ -30,3 +30,4 @@ Data/HatchLocTimeNum.csv
 *.xcworkspacedata
 *.plist
 Code/NatLCSMemWiz/NatLCSMemWiz.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.pdf
