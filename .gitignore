@@ -31,3 +31,8 @@ Data/HatchLocTimeNum.csv
 *.plist
 Code/NatLCSMemWiz/NatLCSMemWiz.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 *.pdf
+*.rds
+Data/SJSSynch.rds
+Data/SJCSynch.rds
+Data/SJCSynch.rds
+*.rds

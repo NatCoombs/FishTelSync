@@ -88,8 +88,12 @@ DetCondenseSurrog <- function(DetFrame){
       OutFrame<-rbind(FishFrame,OutFrame)
     
   }
-  return(na.omit(OutFrame))
+  OutFrame <- na.omit(OutFrame)
+  OrdOut<- OutFrame[order(OutFrame[,"FirstDet"]),]
+  return(OrdOut)
 }
+
+
 
 
 # Script for testing synchrony of the San Joaquin "surrogacy" questions
@@ -145,6 +149,14 @@ for(i in 1:length(SJCRels)){
   SubFrame <- SubFrame[which(SubFrame$Loc %in% TAGArrayList),]
   #print(SubFrame$FirstDet)
   SubFrame <- DetCondenseSurrog(SubFrame)
+  
+  RelT <- as.numeric(as.POSIXct(paste(substr(SJCRels[i], 1, 10)," ", substr(SJCRels[i], 12, 19)), format = "%Y-%m-%d %H:%M:%OS"))
+ 
+  DropVec <- which(SubFrame$FirstDet < RelT)
+  if(length(DropVec) != 0){
+    SubFrame <- SubFrame[-which(SubFrame$FirstDet < RelT),]
+  } 
+  #print(SubFrame)
   SJCDets[[i]] <- SubFrame
   
 }
@@ -153,7 +165,7 @@ SJSDets<-vector(mode = "list", length = length(SJSRels))
 names(SJSDets) <- SJSRels
 for(i in 1:length(SJSRels)){
   
-  SubFrame <- SJSteel[which(SJSteel$Release_date_time == SJSRels[i]), c(2,23,10,11,12)]
+  SubFrame <- SJSteel[which(SJSteel$Release_date_time == SJSRels[i]), c(2,24,11,12,13)]
   
   colnames(SubFrame) <- c("FishID","Loc","FirstDet","LastDet","NumDets")
   #print(SubFrame$FishID)
@@ -164,10 +176,17 @@ for(i in 1:length(SJSRels)){
   #print(SubFrame$FirstDet)
   if(i < 313){
     psxformat <- "%Y-%m-%d %H:%M:%OS" 
+    RelT <- as.numeric(as.POSIXct(SJSRels[i], format = psxformat))
   } else {
     SubFrame$FirstDet <- gsub("15 ", "2015 ", SubFrame$FirstDet)
     SubFrame$LastDet <- gsub("15 ", "2015 ", SubFrame$LastDet)
+    
+    SubFrame$FirstDet <- gsub("16 ", "2016 ", SubFrame$FirstDet)
+    SubFrame$LastDet <- gsub("16 ", "2016 ", SubFrame$LastDet)
+    
     psxformat <- "%m/%d/%Y %H:%M" 
+    
+    RelT <- as.numeric(as.POSIXct(gsub("16 ", "2016 ", gsub("15 ", "2015 ", SJSRels[i])), format = psxformat))
   }
   SubFrame$FirstDet <- as.numeric(as.POSIXct(SubFrame$FirstDet, format = psxformat))
   SubFrame$LastDet <-  as.numeric(as.POSIXct(SubFrame$LastDet, format = psxformat))
@@ -175,6 +194,13 @@ for(i in 1:length(SJSRels)){
   #print(SubFrame$FishID)
   #print(SubFrame$FirstDet)
   SubFrame <- DetCondenseSurrog(SubFrame)
+  
+  DropVec <- which(SubFrame$FirstDet < RelT)
+  if(length(DropVec) != 0){
+    SubFrame <- SubFrame[-which(SubFrame$FirstDet < RelT),]
+  } 
+  
+  
   SJSDets[[i]] <- SubFrame[which(SubFrame$Loc %in% TAGArrayList),]
   
 }
@@ -183,7 +209,7 @@ print(SJSDets[[312]])
 print(SJSDets[[313]])
 print(SJSDets[[314]])
 
-
+SJCDets[[1]]
 
 
 
@@ -222,6 +248,35 @@ for(i in 1:length(SJSRels)){
   SJSPairs[[i]] <- Pairs
 }
 
+
+# Writing out detections & pairs to be used for synchrony testing on the cluster
+if(!dir.exists("./Data/SJReduced")){
+  dir.create("./Data/SJReduced")
+}
+if(!dir.exists("./Data/SJReduced/Dets")){
+  dir.create("./Data/SJReduced/Dets")
+}
+if(!dir.exists("./Data/SJReduced/Pairs")){
+  dir.create("./Data/SJReduced/Pairs")
+}
+
+AllDets<-vector(mode = "list", length = length(SJCPairs) + length(SJSPairs))
+AllPairs<-vector(mode = "list", length = length(AllDets))
+
+for(i in 1:length(SJCPairs)){
+  AllDets[[i]] <- SJCDets[[i]]
+  AllPairs[[i]] <- SJCPairs[[i]]
+}
+for(i in 1:length(SJSPairs)){
+  j <- i + length(SJCPairs)
+  AllDets[[j]] <- SJSDets[[i]]
+  AllPairs[[j]] <- SJSPairs[[i]]
+}
+
+for(i in 1:length(AllDets)){
+  write.csv(AllPairs[[i]], file = paste0("./Data/SJReduced/Pairs/", i, ".csv"), row.names=FALSE)
+  write.csv(AllDets[[i]], file = paste0("./Data/SJReduced/Dets/", i, ".csv"), row.names=FALSE)
+}
 
 
 
@@ -282,7 +337,7 @@ SJCSynch<-vector(mode = "list", length = length(SJCRels))
 SJSSynch<-vector(mode = "list", length = length(SJSRels))
 
 # "A180-1801-29822"
-SJSDebug(313,426)
+SJSDebug(1,22)
 
 for(i in 1:length(SJCRels)){
   cat("Run number: ", i, "")
@@ -362,9 +417,14 @@ for(i in 1:length(SJCSynch)){
   Temp<-cbind(Temp, rep_len(i, dim(Temp)[1]))
   SJCDistTable<-rbind(SJCDistTable,Temp)
 }
-SJCDistTable<-na.omit(SJCDistTable)
+SJCDistTable<-SJCDistTable[-1,]
 
-
+SJCDistTable<-apply(SJCDistTable,1:2,as.numeric)
+SJCDistTable[,1:3]<-apply(SJCDistTable[,1:3],1:2,function(x) {
+  if(x == 0){x} 
+  else {1/x}})
+SJCDistTable<-as.data.frame(SJCDistTable)
+colnames(SJCDistTable) <- c("DSynch", "PSynch", "SSynch", "DDist",  "PDist",  "SDist",  "Alignment length")
 
 SJSDistTable<-matrix(ncol = 7)
 for(i in 1:length(SJSSynch)){
@@ -372,41 +432,78 @@ for(i in 1:length(SJSSynch)){
   Temp<-cbind(Temp, rep_len(i, dim(Temp)[1]))
   SJSDistTable<-rbind(SJSDistTable,Temp)
 }
-SJSDistTable<-na.omit(SJSDistTable)
+SJSDistTable<-SJSDistTable[-1,]
+SJSDistTable<-apply(SJSDistTable,1:2,as.numeric)
+#print(SJSDistTable)
+
+SJSDistTable[,1:3]<-apply(SJSDistTable[,1:3],1:2,function(x) {
+  if(x == 0){x} 
+  else {1/x}})
+#print(SJSDistTable)
+SJSDistTable<-as.data.frame(SJCDistTable)
+colnames(SJSDistTable) <- c("DSynch", "PSynch", "SSynch", "DDist",  "PDist",  "SDist",  "Alignment length")
+
+boxplot("DSynch", SJCDistTable)
 
 pdf("Intermediate Stuff/PrelimDistSynchSJ.pdf")
 par(mfrow=c(3,1))
 
+#boxplot("Dir"~"DirDist", data = SJCDistTable)
+
 plot(SJCDistTable[,4],SJCDistTable[,1], main = "Direct Chinook")
 plot(SJCDistTable[,5],SJCDistTable[,2], main = "Phase Chinook")
 plot(SJCDistTable[,6],SJCDistTable[,3], main = "Step Chinook")
+plot(SJCDistTable[,7],SJCDistTable[,1], main = "Direct Chinook")
+plot(SJCDistTable[,7],SJCDistTable[,2], main = "Phase Chinook")
+plot(SJCDistTable[,7],SJCDistTable[,3], main = "Step Chinook")
 
 plot(SJSDistTable[,4],SJSDistTable[,1], main = "Direct Steelhead")
 plot(SJSDistTable[,5],SJSDistTable[,2], main = "Phase Steelhead")
 plot(SJSDistTable[,6],SJSDistTable[,3], main = "Step Steelhead")
+plot(SJCDistTable[,7],SJCDistTable[,1], main = "Direct Steelhead")
+plot(SJCDistTable[,7],SJCDistTable[,2], main = "Phase Steelhead")
+plot(SJCDistTable[,7],SJCDistTable[,3], main = "Step Steelhead")
 
 par(mfrow=c(1,1))
 dev.off()
 
 
-SteelTermMat<-matrix(ncol = 3, nrow = (length(unlist(SJSPairs))/2))
-colnames(SteelTermMat)<-c("Dir","Pha","Ste")
+SteelTermMat<-matrix(ncol = 6, nrow = (length(unlist(SJSPairs))/2))
+SteelScrewyMat<-matrix(ncol = 2, nrow = (length(unlist(SJSPairs))/2))
+colnames(SteelTermMat)<-c("Dir","Pha","Ste","DL","PL","SL")
 MatDex<-1
+ScrewyDex<-1
 for(i in 1:length(SJSSynch)){
   SubSynch<-SJSSynch[[i]]
   for(j in 1:length(SubSynch)){
     SteelTermMat[MatDex,1]<-SubSynch[[j]][[2]][length(SubSynch[[j]][[2]])]
     SteelTermMat[MatDex,2]<-SubSynch[[j]][[9]][length(SubSynch[[j]][[9]])]
     SteelTermMat[MatDex,3]<-SubSynch[[j]][[16]][length(SubSynch[[j]][[16]])]
+    SteelTermMat[MatDex,4]<-length(SubSynch[[j]][[2]])
+    SteelTermMat[MatDex,5]<-length(SubSynch[[j]][[9]])
+    SteelTermMat[MatDex,6]<-length(SubSynch[[j]][[16]])
+    if("Rel" %in% SteelTermMat[MatDex,1:3] && !(1 %in% 
+    SteelTermMat[MatDex,4:6])){
+      SteelScrewyMat[ScrewyDex,1] <- i
+      SteelScrewyMat[ScrewyDex,2] <- j
+      ScrewyDex<-ScrewyDex+1
+      print(c(i,j))
+      # print(SubSynch[[j]][[2]])
+      # print(SubSynch[[j]][[9]])
+      # print(SubSynch[[j]][[16]])
+    }
     MatDex<-MatDex+1
   }
 }
 table(SteelTermMat[,1])
 table(SteelTermMat[,2])
 table(SteelTermMat[,3])
+# table(SteelTermMat[,4])
+# table(SteelTermMat[,5])
+# table(SteelTermMat[,6])
 
-ChinTermMat<-matrix(ncol = 3, nrow = (length(unlist(SJCPairs))/2))
-colnames(ChinTermMat)<-c("Dir","Pha","Ste")
+ChinTermMat<-matrix(ncol = 6, nrow = (length(unlist(SJCPairs))/2))
+colnames(ChinTermMat)<-c("Dir","Pha","Ste","DL","PL","SL")
 MatDex<-1
 for(i in 1:length(SJCSynch)){
   SubSynch<-SJCSynch[[i]]
@@ -414,9 +511,77 @@ for(i in 1:length(SJCSynch)){
     ChinTermMat[MatDex,1]<-SubSynch[[j]][[2]][length(SubSynch[[j]][[2]])]
     ChinTermMat[MatDex,2]<-SubSynch[[j]][[9]][length(SubSynch[[j]][[9]])]
     ChinTermMat[MatDex,3]<-SubSynch[[j]][[16]][length(SubSynch[[j]][[16]])]
+    ChinTermMat[MatDex,4]<-length(SubSynch[[j]][[2]])
+    ChinTermMat[MatDex,5]<-length(SubSynch[[j]][[9]])
+    ChinTermMat[MatDex,6]<-length(SubSynch[[j]][[16]])
+    if("Rel" %in% c(ChinTermMat[MatDex,c(1,2,3)])){
+      print(c(i,j))
+      print(SubSynch[[j]][[2]])
+      print(SubSynch[[j]][[9]])
+      print(SubSynch[[j]][[16]])
+    }
     MatDex<-MatDex+1
   }
 }
 table(ChinTermMat[,1])
 table(ChinTermMat[,2])
 table(ChinTermMat[,3])
+# table(ChinTermMat[,4])
+# table(ChinTermMat[,5])
+# table(ChinTermMat[,6])
+
+# 
+# for(i in 1:length(SJCDets)){
+#   sort(order)
+# }
+# 
+# 
+# 
+# 
+# 
+par(mfrow=c(3,2))
+
+#boxplot("Dir"~"DirDist", data = SJCDistTable)
+
+plot(SJCDistTable[,4],SJCDistTable[,1], main = "Direct Chinook")
+plot(SJSDistTable[,4],SJSDistTable[,1], main = "Direct Steelhead")
+plot(SJCDistTable[,5],SJCDistTable[,2], main = "Phase Chinook")
+plot(SJSDistTable[,5],SJSDistTable[,2], main = "Phase Steelhead")
+plot(SJCDistTable[,6],SJCDistTable[,3], main = "Step Chinook")
+
+
+
+
+plot(SJSDistTable[,6],SJSDistTable[,3], main = "Step Steelhead")
+
+
+par(mfrow=c(1,1))
+
+
+
+# Let's fix our clustering issues now.
+ClustTestSynch1 <- SJCSynch[[1]]
+ClustTestFish1 <- SJCFish[[1]]
+ClustTestPairs1 <- SJCPairs[[1]]
+
+ClustTestMat<-matrix(data = 0, nrow = length(ClustTestFish1), ncol = length(ClustTestFish1))
+
+rownames(ClustTestMat) <- ClustTestFish1
+colnames(ClustTestMat) <- ClustTestFish1
+PairDex <- 1
+for(i in 1:(length(ClustTestFish1)-1)){
+  for(j in (i+1):length(ClustTestFish1)){
+    ZCheck <- as.numeric(ClustTestSynch1[[PairDex]][[7]])
+    if(ZCheck != 0){
+      ZCheck <- 1/ZCheck
+    }
+    ClustTestMat[i,j] <- ZCheck
+    ClustTestMat[j,i] <- ZCheck
+    PairDex <- PairDex + 1
+  }
+}
+image(ClustTestMat)
+
+ClusTestEig<-wsyn::cluseigen(ClustTestMat)
+ClusTestMembs<-ClusTestEig[[length(ClusTestEig)]]
+wsyn::modularity(ClustTestMat,ClusTestMembs)
