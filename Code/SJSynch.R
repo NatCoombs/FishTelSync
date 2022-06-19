@@ -560,9 +560,9 @@ par(mfrow=c(1,1))
 
 
 # Let's fix our clustering issues now.
-ClustTestSynch1 <- SJCSynch[[1]]
-ClustTestFish1 <- SJCFish[[1]]
-ClustTestPairs1 <- SJCPairs[[1]]
+ClustTestSynch1 <- SJCSynch[[72]]
+ClustTestFish1 <- SJCFish[[72]]
+ClustTestPairs1 <- SJCPairs[[72]]
 
 ClustTestMat<-matrix(data = 0, nrow = length(ClustTestFish1), ncol = length(ClustTestFish1))
 

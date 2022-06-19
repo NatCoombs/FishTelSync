@@ -5,6 +5,10 @@ if(! "Rcpp" %in% installed.packages()[,"Package"]){
   install.packages("Rcpp", repos = "http://cran.us.r-project.org")
 }
 library("Rcpp")
+if(! "wsyn" %in% installed.packages()[,"Package"]){
+  install.packages("wsyn", repos = "http://cran.us.r-project.org")
+}
+library("wsyn")
 
 # Source appropriate functions
 source(file = "./Functions/LCSCalc.R")
@@ -14,7 +18,8 @@ source(file = "./Functions/MarkovFishSurrogates.R")
 source(file = "./Functions/MFSig.R")
 Rcpp::sourceCpp(file = "./Functions/FullLCSExtractor.cpp")
 # One arg: the key we're on at this point and then the working directory.
-Index <- commandArgs(trailingOnly = TRUE)[1]
+TaskID <- Sys.getenv("SLURM_ARRAY_TASK_ID")
+Index <- strsplit(TaskID,"_", fixed = T)[[1]][2]
 
 Pairs <- read.csv(file = paste0("./Data/SJReduced/Pairs", Index, ".csv"))
 Dets <- read.csv(file = paste0("./Data/SJReduced/Dets", Index, ".csv"))

@@ -32,24 +32,29 @@ MFPop <- function(RedSet, TruePairs, Surrs, Reps, Seed = 1){
   
   
   for(i in 1:3){
-    RefAdj<-matrix(nrow = length(TFish), ncol = length(TFish))
+    RefAdj<-matrix(nrow = length(TFish), ncol = length(TFish), data = 0)
     Refs[1,i] <- mean(RefScores[,i])
     Percs<-quantile(RefScores[,i], c(.9,.1))
     Refs[3,i] <- Percs[1]
     Refs[4,i] <- Percs[2]
-    for(j in 1:length(TruePairs[,1])){
-      LDk1 <- match(TruePairs[j,1],TFish)
-      LDk2 <- match(TruePairs[j,2],TFish)
-      
-      RefAdj[LDk1,LDk2] <- ( (as.numeric(RedSet[[j]][[i*7]])))
-      
-      RefAdj[LDk2,LDk1] <- RefAdj[LDk1,LDk2]
+
+    PairDex <- 1
+    for(k in 1:(length(TFish)-1)){
+      for(j in (k+1):length(TFish)){
+        ZCheck <- as.numeric(ClustTestSynch1[[PairDex]][[i*7]])
+        if(ZCheck != 0){
+          ZCheck <- 1/ZCheck
+        }
+        RefAdj[k,j] <- ZCheck
+        RefAdj[j,k] <- ZCheck
+        PairDex <- PairDex + 1
+      }
     }
-    for(j in 1:length(TFish)){
-      RefAdj[j,j] <- 0
-    }
-    #RefClust<-cluseigen(RefAdj)
-    #Refs[2,i]<-modularity(RefAdj,RefClust[[length(RefClust)]])
+
+    RefClusEig<-wsyn::cluseigen(RefAdj)
+    RefClusMemb<- RefClusEig[[length(RefClusEig)]]
+
+    Refs[2,i]<-wsyn::modularity(RefAdj,RefClusMemb)
   }
   # Okay, we have our basic reference pipeline... Now what?
   nFish<-length(TFish)
@@ -94,12 +99,30 @@ MFPop <- function(RedSet, TruePairs, Surrs, Reps, Seed = 1){
     #print(SurrScores)
     #cat("BORK ")
     for(j in 1:3){
-      #SurrAdj<-matrix(nrow = nFish, ncol = nFish)
       MeanMat[i,j] <- mean(SurrScores[,j])
       Percs<-quantile(SurrScores[,j], c(.9,.1))
       NintiethMat[i,j] <- Percs[1]
       TenthMat[i,j] <- Percs[2]
-      #print(Percs)
+      
+      SurrAdj<-matrix(nrow = nFish, ncol = nFish, data = 0)
+      
+      for(k in 1:(nFish-1)){
+        for(l in (k+1):nFish){
+          ZCheck <- as.numeric(SurrScores[PairDex,j])
+          if(ZCheck != 0){
+            ZCheck <- 1/ZCheck
+          }
+          SurrAdj[k,l] <- ZCheck
+          SurrAdj[l,k] <- ZCheck
+          PairDex <- PairDex + 1
+        }
+      }
+      
+      SurrClusEig<-wsyn::cluseigen(SurrAdj)
+      SurrClusMemb<-SurrClusEig[[length(SurrClusEig)]]
+      
+      ClusMat[i,j]<-wsyn::modularity(SurrAdj,SurrClusMemb)
+      
       #cat("BURK ")
       # for(k in 1:length(Pairs[,1])){
       # 
@@ -130,7 +153,7 @@ MFPop <- function(RedSet, TruePairs, Surrs, Reps, Seed = 1){
   
   for(i in 1:3){
     Ranks[1,i] <- length(which(MeanMat[,i] < Refs[1,i]))
-    #Ranks[2,i] <- length(which(ClusMat[,i] < Refs[2,i]))
+    Ranks[2,i] <- length(which(ClusMat[,i] < Refs[2,i]))
     Ranks[3,i] <- length(which(NintiethMat[,i] < Refs[3,i]))
     Ranks[4,i] <- length(which(TenthMat[,i] < Refs[4,i]))
   }
@@ -140,7 +163,7 @@ MFPop <- function(RedSet, TruePairs, Surrs, Reps, Seed = 1){
   
   DistList<-list()
   DistList[[1]] <- MeanMat
-  #DistList[[2]] <- ClusMat
+  DistList[[2]] <- ClusMat
   DistList[[3]] <- NintiethMat
   DistList[[4]] <- TenthMat
   
