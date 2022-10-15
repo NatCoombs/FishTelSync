@@ -215,6 +215,26 @@ ProblemFish <- c("LFC3077", "LFC3147", "LFC3093")
 ProblemKey <- which(ColemanIDs[[2]] %in% ProblemFish)
 ColemanIDs[[2]] <- ColemanIDs[[2]][-ProblemKey]
 
+SacMinTrav<-c("BtlCkCNFHWeir", "Upper_Battle_Ck", "Battle_Ck") 
+
+MTravDrop<-vector(mode = "character")
+for(i in unique(CNFHChinDense$FishID)){
+  SubDense<-CNFHChinDense[CNFHChinDense$FishID %in% i,]
+  
+  MTravLocs<-unique(SubDense$Loc)
+  
+  if(all(MTravLocs %in% SacMinTrav)){
+    MTravDrop <- c(MTravDrop, i)
+  }
+}
+
+for(i in 1:length(ColemanIDs)){
+  DropVec <- which(ColemanIDs[[i]] %in% MTravDrop)
+  ColemanIDs[[i]] <- ColemanIDs[[i]][-DropVec]
+}
+
+
+
 ColemanPairs<-list()
 for(k in 1:length(ColemanIDs)){
   RelPairs<-data.frame(data = NA)
@@ -236,6 +256,33 @@ DebugCole(2,2118)
 CNFHChinDense$FirstDet<-as.numeric(as.POSIXct(CNFHChinDense$FirstDet))
 CNFHChinDense$LastDet<-as.numeric(as.POSIXct(CNFHChinDense$LastDet))
 CNFHChinDense<-na.omit(CNFHChinDense)
+
+if(!dir.exists("./Data/SacChinReduced")){
+  dir.create("./Data/SacChinReduced")
+}
+if(!dir.exists("./Data/SacChinReduced/Dets")){
+  dir.create("./Data/SacChinReduced/Dets")
+}
+if(!dir.exists("./Data/SacChinReduced/Pairs")){
+  dir.create("./Data/SacChinReduced/Pairs")
+}
+
+# 1 is the Dec 2010 release, 2 is the Dec 2009 release, and 3 is the Jan 2011 release. We just ignored 2 in our presenting stuff because it wasn't interesting at the time.
+# Write out so we can throw it to the cluster
+
+for(i in 1:length(ColemanPairs)){
+  CDets <- CNFHChinDense[CNFHChinDense$FishID %in% ColemanIDs[[i]],]
+  
+  DropVec <- which(CDets$FirstDet < as.numeric(as.POSIXct(CNFHChin$Release_date_time[i])))
+  if(length(DropVec) != 0){
+    SubFrame <- SubFrame[-which(SubFrame$FirstDet < RelT),]
+  } 
+  
+  write.csv(CDets, file = paste0("./Data/SacChinReduced/Dets/", i,".csv"), row.names=FALSE)
+  write.csv(ColemanPairs[[i]], file = paste0("./Data/SacChinReduced/Pairs/", i,".csv"), row.names=FALSE)
+}
+
+
 
 source("Code/Functions/LCSCalc.R")
 Rcpp::sourceCpp("Code/Functions/FullLCSExtractor.cpp")
