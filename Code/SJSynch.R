@@ -850,7 +850,6 @@ wsyn::modularity(ClustTestMat,ClusTestMembs)
 # Reading in the data from the cluster
 
 
-
 OutFileSet <- list.files("/Users/nathanielcoombs/Desktop/Cluster_folders/SjSurrogCluster/Outputs/Pops/")
 OutSet <- vector(mode = "character", length = length(OutFileSet))
 for(i in 1:length(OutFileSet)){
@@ -858,7 +857,10 @@ for(i in 1:length(OutFileSet)){
 }
 
 
-cat(paste0(which(!(1:675 %in% OutSet)),collapse = ","))
+cat(paste0(which(!(1:385 %in% OutSet)),collapse = ","))
+
+
+
 
 SJCRS
 #<-as.numeric(SJCRSMat[,2])
@@ -880,10 +882,13 @@ names(SJCPopSig) <- SJCRSMat[which(SJCRS > 7),1]
 
 #<-as.numeric(SJSRSMat[,2])
 ClusterRunVec <- c(which(SJCRS > 7), 143 + which(SJSRS > 7)) 
+ClusterRunRels <- c(SJCRSMat[which(SJCRS > 7),1], SJSRSMat[which(SJSRS > 7),1]) 
+
+# # # Try refreshing the data and checking for NA's
 
 SJCErr<-vector(mode = "numeric")
 for(i in 1:length(ClusterRunVec)){
-  if(ClusterRunVec[i] %in% c(149,158,159,172,178,188,196,227,237,243,245)){
+  if(!(ClusterRunVec[i] %in% as.numeric(OutSet))){
     next
   }
   if(ClusterRunVec[i] < 143){
@@ -907,8 +912,10 @@ colnames(SJCPopMat) <- c("MeanLD", "MeanPS", "MeanLS", "ModLD", "ModPS", "ModLS"
 rownames(SJCPopMat) <- names(SJCPopSig)
 
 rownames(SJSPopMat) <- names(SJSPopSig)
+# # # Try refreshing the data and checking for NA's
 
 for(i in 1:length(SJSPopSig)){
+  print(i)
   PopSigTemp <- SJSPopSig[[i]]
   if(length(PopSigTemp) == 0){
     next
@@ -934,8 +941,10 @@ for(i in 1:length(SJSPopSig)){
 
 
 for(i in 1:length(SJCPopSig)){
+  print(i)
   PopSigTemp <- SJCPopSig[[i]]
   if(length(PopSigTemp) == 0){
+    print(i)
     next
   }
   SJCPopMat[i,1] <- 1/PopSigTemp[[1]][1,1]
@@ -957,13 +966,117 @@ for(i in 1:length(SJCPopSig)){
   SJCPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
 }
 
+CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/All_year_size_summary.csv")
+#CorrSJChin <- CorrSJBiomTable[which(CorrSJBiomTable$Group %in% "CHN"),]
+#CorrSJChinSub <- CorrSJChin[which(CorrSJChin$Fish.Length < 85),]
+
+# # # Need to recheck for potential NA sources
+ClustBioms<-vector(mode = "list", length(ClusterRunRels))
+names(ClustBioms) <- ClusterRunRels
+for(i in 1:length(ClustBioms)){
+
+  if(ClusterRunVec[i] < 143){
+    Fish <- SJCFish[[ClusterRunVec[i]]]
+  } else {
+    Fish <- SJSFish[[ClusterRunVec[i] - 143]]
+  }
+  ClustBiomTable <- matrix(data = NA, nrow = length(Fish), ncol = 3)
+  #print(Fish)
+  colnames(ClustBiomTable) <- c("Fish", "Length", "Weight")
+  for(j in 1:length(Fish)){
+    #print(j)
+    ClustBiomTable[j,1] <- Fish[j]
+    #print(Fish[j])
+    # Now we if/else chain for l/w.
+    FishBiomKey <- which(CorrSJBiomTable$Serial.nr %in% Fish[j])
+    # Need a good way to do some clever setting of FishSignal as a value
+    # if(ClusterRunVec[i] < 143) {
+    #    FishSignalTemp <- 
+    # } else {
+    #   
+    # }
+    FishBarrierKey <- which(SJBarrierTable$Signal %in% Fish[j])
+    #print(FishBiomKey)
+    if(length(FishBiomKey) > 0){
+      ClustBiomTable[j,2] <- CorrSJBiomTable$Fish.Length[FishBiomKey]
+      ClustBiomTable[j,3] <- CorrSJBiomTable$Fish.Weight[FishBiomKey]
+    } else if (length(FishBarrierKey) > 0){
+      ClustBiomTable[j,2] <- SJBarrierTable$Length[FishBarrierKey]
+      ClustBiomTable[j,3] <- SJBarrierTable$Weight[FishBarrierKey]
+    }
+  }
+  ClustBioms[[i]] <- ClustBiomTable
+}
+
+
+
+SJCLMean <- vector(mode = "numeric")
+SJCWMean <- vector(mode = "numeric")
+SJCLVar <- vector(mode = "numeric")
+SJCWVar <- vector(mode = "numeric")
+
+SJSLMean <- vector(mode = "numeric")
+SJSWMean <- vector(mode = "numeric")
+SJSLVar <- vector(mode = "numeric")
+SJSWVar <- vector(mode = "numeric")
+# # # Running into weird NA's for biometric data in here.
+for(i in 1:length(ClusterRunVec)){
+
+  #print(is.null(ClustBioms[[i]]))
+  if(!(is.null(ClustBioms[[i]]))){
+    Lmean <- mean(as.numeric(ClustBioms[[i]][,2]), na.rm = T)
+    Lvar <- var(as.numeric(ClustBioms[[i]][,2]), na.rm = T)
+    
+    Wmean <- mean(as.numeric(ClustBioms[[i]][,3]), na.rm = T)
+    Wvar <- var(as.numeric(ClustBioms[[i]][,3]), na.rm = T)}
+  else {
+    print(i)
+    Lmean <- NA
+    Lvar <- NA
+    
+    Wmean <- NA
+    Wvar <- NA
+    
+  }
+  if(ClusterRunVec[i] < 143){
+    #print(i)
+    SJCLMean <- c(SJCLMean, Lmean)
+    SJCLVar <- c(SJCLVar, Lvar)
+    
+    SJCWMean <- c(SJCWMean, Wmean)
+    SJCWVar <- c(SJCWVar, Wvar)
+    #print(i)
+  } else {
+    
+    SJSLMean <- c(SJSLMean, Lmean)
+    SJSLVar <- c(SJSLVar, Lvar)
+    
+    SJSWMean <- c(SJSWMean, Wmean)
+    SJSWVar <- c(SJSWVar, Wvar)
+    #print(i)
+  }
+}
+
+
+SJSPopMat <- cbind(SJSPopMat, SJSLMean, SJSLVar, SJSWMean, SJSWVar)
+SJCPopMat <- cbind(SJCPopMat, SJCLMean, SJCLVar, SJCWMean, SJCWVar)
+
+
+
+nrow(SJCPopMat)
+nrow(SJSPopMat)
+# # #
+
+# LOOK AT AND FOR NA's'
+# # #
 SJCPopMat<- na.omit(SJCPopMat)
 SJSPopMat<- na.omit(SJSPopMat)
 
+nrow(SJCPopMat)
+nrow(SJSPopMat)
 
 
-
-
+#####
 pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJSynchTempPop.pdf")
 par(mfrow=c(2,2))
 boxplot(SJSPopMat[,1:3])
@@ -1145,11 +1258,48 @@ SJCPopMat <- cbind(SJCPopMat, as.POSIXct(rownames(SJCPopMat)))
 
 SJSPopMat <- cbind(SJSPopMat, c(as.POSIXct(rownames(SJSPopMat)[1:72]), as.POSIXct(rownames(SJSPopMat)[73:92], format = "%m/%d/%Y %H:%M")))
 
+SJSPopRels<-rownames(SJSPopMat)
+SJCPopRels<-rownames(SJCPopMat)
+
+SJCDates<-vector(mode = "character", length = length(SJCPopRels))
+SJSDates<-vector(mode = "character", length = length(SJSPopRels))
+for(i in 1:length(SJCDates)){
+  Day<-strsplit(SJCPopRels[i], split = "T", fixed = T)[[1]][1]
+  DaySplit <- strsplit(Day, split = "-", fixed = T)[[1]]
+  SJCDates[i] <- paste(as.numeric(DaySplit[2]), as.numeric(DaySplit[3]), DaySplit[1], sep = "/")
+}
+for(i in 1:length(SJSDates)){
+  Day<-strsplit(SJSPopRels[i], split = " ", fixed = T)[[1]][1]
+  if(i < 73){
+    DaySplit <- strsplit(Day, split = "-", fixed = T)[[1]]
+    SJSDates[i] <- paste(as.numeric(DaySplit[2]), as.numeric(DaySplit[3]), DaySplit[1], sep = "/")
+  } else {
+    DaySplit <- strsplit(Day, split = "/", fixed = T)[[1]]
+    #print(DaySplit[1])
+    SJSDates[i] <- paste(as.numeric(DaySplit[1]), as.numeric(DaySplit[2]), paste0(20, DaySplit[3]), sep = "/")
+  }
+}
+SJSFlows <- vector(length = length(SJSDates))
+SJCFlows <- vector(length = length(SJCDates))
+for(i in 1:length(SJSFlows)){
+  Day<-SJSDates[i]
+  Key<-which(SJFlows$Date %in% Day)
+  #print(Key)
+  SJSFlows[i] <- SJFlows$SJR[Key]
+}
+
+for(i in 1:length(SJCFlows)){
+  Day<-SJCDates[i]
+  Key<-which(SJFlows$Date == Day)
+  SJCFlows[i] <- SJFlows$SJR[Key]
+}
+SJSPopMat<-cbind(SJSPopMat,SJSFlows)
+SJCPopMat<-cbind(SJCPopMat,SJCFlows)
+SJFlowsRAW <- read.csv("/Users/nathanielcoombs/Downloads/SanJoaquinDelta_Dayflow_1996_2020.csv")
+SJFlows <- SJFlowsRAW[,c(3,9)]
 
 
-SJSPopMat <- cbind(SJSPopMat, SJSRSMat[which(SJSRSMat[,1] %in% rownames(SJSPopMat)), 2])
-SJCPopMat <- cbind(SJCPopMat, SJCRSMat[which(SJCRSMat[,1] %in% rownames(SJCPopMat)), 2])
-
+#####
 pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJSynchMod.pdf")
 
 par(mfrow = c(3,1))
@@ -1203,5 +1353,148 @@ length(which(SJCPopMat[,12] < .05))
 length(which(SJSPopMat[,12] < .05))
 
 nrow(SJSPopMat)
+#####
+pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJClustVsBiom.pdf")
+par(mfrow = c(2,2))
+
+plot(SJCPopMat[,13], SJCPopMat[,14])
+title(main = "Chin length Var vs Mean")
+plot(SJSPopMat[,13], SJSPopMat[,14])
+title(main = "Steel length Var vs Mean")
+plot(SJCPopMat[,15], SJCPopMat[,16])
+title(main = "Chin weight Var vs Mean")
+plot(SJSPopMat[,15], SJSPopMat[,16])
+title(main = "Steel weight Var vs Mean")
+
+plot(SJCPopMat[,13], SJCPopMat[,15])
+title(main = "Chin mean length vs weight")
+plot(SJSPopMat[,13], SJSPopMat[,15])
+title(main = "Steel mean length vs weight")
+plot(SJCPopMat[,14], SJCPopMat[,16])
+title(main = "Chin var length vs weight")
+plot(SJSPopMat[,14], SJSPopMat[,16])
+title(main = "Steel var length vs weight")
+
+# # # And now against sig clustering
+
+plot(SJCPopMat[,13], SJCPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Euc vs length mean")
+plot(SJCPopMat[,14], SJCPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Euc vs length var")
+plot(SJCPopMat[,15], SJCPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Euc vs weight mean")
+plot(SJCPopMat[,16], SJCPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Euc vs weight var")
+
+plot(SJSPopMat[,13], SJSPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Euc vs length mean")
+plot(SJSPopMat[,14], SJSPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Euc vs length var")
+plot(SJSPopMat[,15], SJSPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Euc vs weight mean")
+plot(SJSPopMat[,16], SJSPopMat[,10], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Euc vs weight var")
 
 
+
+plot(SJCPopMat[,13], SJCPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Phase vs length mean")
+plot(SJCPopMat[,14], SJCPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Phase vs length var")
+plot(SJCPopMat[,15], SJCPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Phase vs weight mean")
+plot(SJCPopMat[,16], SJCPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Phase vs weight var")
+
+plot(SJSPopMat[,13], SJSPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Phase vs length mean")
+plot(SJSPopMat[,14], SJSPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Phase vs length var")
+plot(SJSPopMat[,15], SJSPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Phase vs weight mean")
+plot(SJSPopMat[,16], SJSPopMat[,11], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Phase vs weight var")
+
+plot(SJCPopMat[,13], SJCPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Step vs length mean")
+plot(SJCPopMat[,14], SJCPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Step vs length var")
+plot(SJCPopMat[,15], SJCPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Step vs weight mean")
+plot(SJCPopMat[,16], SJCPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Chin Sig Step vs weight var")
+
+plot(SJSPopMat[,13], SJSPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Step vs length mean")
+plot(SJSPopMat[,14], SJSPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Step vs length var")
+plot(SJSPopMat[,15], SJSPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Step vs weight mean")
+plot(SJSPopMat[,16], SJSPopMat[,12], ylim = c(0,1))
+abline(h = .05, col = "red")
+title(main = "Steel Sig Step vs weight var")
+
+par(mfrow = c(1,1))
+dev.off()
+#####
+pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJClustVsFlows.pdf")
+plot(x = SJCPopMat[,18], SJCPopMat[,10], main = "Chin - Euc sig vs flow", ylim = c(0,1))
+abline(h = .05, col = "Red")
+plot(x = SJCPopMat[,18], SJCPopMat[,11], main = "Chin - Phase sig vs flow", ylim = c(0,1))
+abline(h = .05, col = "Red")
+plot(x = SJCPopMat[,18], SJCPopMat[,12], main = "Chin - Step sig vs flow", ylim = c(0,1))
+abline(h = .05, col = "Red")
+
+plot(x = SJSPopMat[,18], SJSPopMat[,10], main = "Steel - Euc sig vs flow", ylim = c(0,1))
+abline(h = .05, col = "Red")
+plot(x = SJSPopMat[,18], SJSPopMat[,11], main = "Steel - Phase sig vs flow", ylim = c(0,1))
+abline(h = .05, col = "Red")
+plot(x = SJSPopMat[,18], SJSPopMat[,12], main = "Steel - Step sig vs flow", ylim = c(0,1))
+abline(h = .05, col = "Red")
+
+dev.off()
+
+
+#####
+# Logistic regression on flows
+SJSPopMat<-cbind(SJSPopMat,(SJSPopMat[,10] < .05))
+colnames(SJSPopMat)[19] <- "SigLog"
+
+SJCPopMat<-cbind(SJCPopMat,(SJCPopMat[,10] < .05))
+colnames(SJCPopMat)[19] <- "SigLog"
+
+SFlowLog = glm(formula = SigLog ~ SJSFlows, data = as.data.frame(SJSPopMat), family = binomial)
+
+CFlowLog = glm(formula = SigLog ~ SJCFlows, data = as.data.frame(SJCPopMat), family = binomial)
+
+print(summary(SFlowLog))
+print(summary(CFlowLog))
+# Let's try beta Reg
+library("betareg")
+SFlowBet = betareg(SigLog ~ SJSFlows, data = as.data.frame(SJSPopMat))
+
+CFlowBet = betareg(formula = PModLD ~ SJCFlows, data = as.data.frame(SJCPopMat))
+# Let's do a quick t test on our splits for biometrics vs clustering

@@ -37,3 +37,9 @@ Data/SJCSynch.rds
 Data/SJCSynch.rds
 *.rds
 *.icloud
+Data/SJSPairs.rds
+*.rds
+*.history
+*.rds
+*.rds
+Data/SJCPairs.rds
