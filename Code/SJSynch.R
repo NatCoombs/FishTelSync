@@ -98,11 +98,6 @@ DetCondenseSurrog <- function(DetFrame){
 
 # Script for testing synchrony of the San Joaquin "surrogacy" questions
 
-
-
-
-
-
 SourceSJChin<-read.csv("Data/ChinookEventsFormatted/ALL_South_Delta_fall_Chinook_events_formatted_20220407.csv")
 SourceSJSteel<-read.csv("Data/SteelheadEventsFormatted/ALL_South_Delta_fall_Steelhead_events_formatted_20220415.csv")
 
@@ -118,191 +113,186 @@ for(i in 1:nrow(SJBiomTable)){
   SrnDexChin <- which(SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr[i])
   SrnDexSteel <- which(SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr[i])
   if(length(SrnDexChin) > 0){
-    if(SJBiomTable$Barrier_status[i] == "Present"){
       if(SJBiomTable$Pathway[i] %in% c("mid")){
     SJChin$Tag_ID_1[SrnDexChin] <- SJBiomTable$Signal[i]
       } else {
         SJChin <- SJChin[-SrnDexChin,]
       }
-    } else {
-      SJChin <- SJChin[-SrnDexChin,]
-    }
+
   }
   if(length(SrnDexSteel > 0)){
-    if(SJBiomTable$Barrier_status[i] == "Present"){
+    
       if(SJBiomTable$Pathway[i] %in% c("mid")){
         SJSteel$Tag_ID[SrnDexSteel] <- SJBiomTable$Signal[i]
       } else {
         SJSteel <- SJSteel[-SrnDexSteel,]
       }
-    } else {
-      SJSteel <- SJSteel[-SrnDexSteel,]
-    }  }
-}
-
-unique(SJChin$Tag_ser_num[which(! (SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr))])
-unique(SJSteel$Tag_ser_num[which(! (SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr))])
-
-SJChinBT <- SJChin[which(SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr),]
-SJSteelBT <- SJSteel[which(SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr),]
-
-SJChinCheck <- SJChin[-which(SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr),]
-SJSteelCheck <- SJSteel[-which(SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr),]
-
-which(SJSteelCheck$Tag_ser_num %in% SJBiomTable$Serial.nr)
-which(SJChinCheck$Tag_ser_num %in% SJBiomTable$Serial.nr)
-
-which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal)
-which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal)
-# Sweet, let's try a cross-walk?
-table(SJBarrierTable[which((SJBarrierTable$Signal %% 2) == 1),"Species"])
-# Try sweeping by going down by one val on odds and then going up by one on evens? First dupe Tag_ID_2 to 1.
-which(which(is.na(SJChinCheck$Tag_ID_1)) %in% which(is.na(SJChinCheck$Tag_ID_2)))
-
-for(i in 1:nrow(SJChinCheck)){
-  if(is.na(SJChinCheck$Tag_ID_1[i])){
-    SJChinCheck$Tag_ID_1[i] <- SJChinCheck$Tag_ID_2[i]
-  }
-}
-dim(SJChinCheck)
-ChinCheckSigs <- na.omit(unique(SJChinCheck$Tag_ID_1))
-ChinCheckSigsNMod2 <- ChinCheckSigs[which(as.logical(as.numeric(ChinCheckSigs) %% 2))]
-SJChinCheck
-for(i in 1:length(ChinCheckSigsNMod2)){
-  SCCross <- as.numeric(ChinCheckSigsNMod2[i])
-  SCCrossP <- SCCross-1
-  InDex <- c(which(SJChinCheck$Tag_ID_2 %in% SCCross), which(SJChinCheck$Tag_ID_1 %in% SCCross))
-  SJChinCheck$Tag_ID_1[InDex] <- SCCrossP
-}
-
-dim(SJChinCheck)
-
-SteelCheckSigs <- na.omit(unique(SJSteelCheck$Tag_ID))
-SteelCheckSigsNMod2 <- SteelCheckSigs[which(as.logical(as.numeric(SteelCheckSigs) %% 2))]
-#SJSteelCheck
-#SteelCheckSigsNMod2
-
-
-for(i in 1:length(SteelCheckSigsNMod2)){
-  SCCross <- as.numeric(SteelCheckSigsNMod2[i])
-  SCCrossP <- SCCross-1
-  InDex <- which(SJSteelCheck$Tag_ID %in% SCCross)
-  
-  SJSteelCheck$Tag_ID[InDex] <- SCCrossP
-}
-dim(SJSteelCheck)
-for(i in 1:nrow(SJBarrierTable)){
-  ChinDex <- which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal[i])
-  SteelDex <- which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal[i])
-  if(length(ChinDex > 0)){
-    if(SJBarrierTable$Barrier_status[i] %in% "Present"){
-      if(SJBarrierTable$Pathway[i] %in% c("mid")){
-        next
-      } else {
-        SJChinCheck <- SJChinCheck[-ChinDex,]
       }
-    } else {
-      SJChinCheck <- SJChinCheck[-ChinDex,]
-    }
-  }
-  if(length(SteelDex > 0)){
-    if(SJBarrierTable$Barrier_status[i] %in% "Present"){
-      if(SJBarrierTable$Pathway[i] %in% c("mid")){
-        next
-      } else {
-        SJSteelCheck <- SJSteelCheck[-SteelDex,]
-      }
-    } else {
-      SJSteelCheck <- SJSteelCheck[-SteelDex,]
-    }
-  }
 }
-SJChinCM2 <- SJChinCheck[which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal),]
-SJSteelCM2 <- SJSteelCheck[which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal),]
-dim(SJChinCheck)
-dim(SJSteelCheck)
-dim(SJChinCM2)
-dim(SJSteelCM2)
-# Now remove the ones we just saved and repeat for mod 1
-SJChinCheck <- SJChinCheck[-which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal),]
-SJSteelCheck <- SJSteelCheck[-which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal),]
-dim(SJChinCheck)
-dim(SJSteelCheck)
-ChinCheckSigs <- na.omit(unique(SJChinCheck$Tag_ID_1))
-# Remember, only Mod2 remain now
-for(i in 1:length(ChinCheckSigs)){
-  SCCross <- as.numeric(ChinCheckSigs[i])
-  SCCrossP <- SCCross+1
-  InDex <- which(SJChinCheck$Tag_ID_1 %in% SCCross)
-  SJChinCheck$Tag_ID_1[InDex] <- SCCrossP
-}
-any(is.na(SJChinCheck$Tag_ID_1))
-
-SteelCheckSigs <- na.omit(unique(SJSteelCheck$Tag_ID))
-for(i in 1:length(SteelCheckSigs)){
-  SCCross <- as.numeric(SteelCheckSigs[i])
-  SCCrossP <- SCCross+1
-  InDex <- which(SJSteelCheck$Tag_ID %in% SCCross)
-  
-  SJSteelCheck$Tag_ID[InDex] <- SCCrossP
-}
-
-for(i in 1:nrow(SJBarrierTable)){
-  ChinDex <- which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal[i])
-  SteelDex <- which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal[i])
-  if(length(ChinDex > 0)){
-    if(SJBarrierTable$Barrier_status[i] %in% "Present"){
-      if(SJBarrierTable$Pathway[i] %in% c( "mid")){
-        next
-      } else {
-        SJChinCheck <- SJChinCheck[-ChinDex,]
-      }
-    } else {
-      SJChinCheck <- SJChinCheck[-ChinDex,]
-    }
-  }
-  if(length(SteelDex > 0)){
-    if(SJBarrierTable$Barrier_status[i] %in% "Present"){
-      if(SJBarrierTable$Pathway[i] %in% c("mid")){
-        next
-      } else {
-        SJSteelCheck <- SJSteelCheck[-SteelDex,]
-      }
-    } else {
-      SJSteelCheck <- SJSteelCheck[-SteelDex,]
-    }
-  }
-}
-SJChinCM1 <- SJChinCheck[which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal),]
-SJSteelCM1 <- SJSteelCheck[which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal),]
-
-SJChinRem <- SJChinCheck[which(!(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal)),]
-SJSteelRem <- SJSteelCheck[which(!(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal)),]
-
-RemChin <- unique(SJChinCheck$Tag_ID_1)[which(!(unique(SJChinCheck$Tag_ID_1) %in% SJBarrierTable$Signal))]
-RemSteel <- unique(SJSteelCheck$Tag_ID)[which(!(unique(SJSteelCheck$Tag_ID) %in% SJBarrierTable$Signal))]
-RemChin
-RemSteel
-
-dim(SJChinCM2)
-dim(SJChinCM1)
-dim(SJChinBT)
-dim(SourceSJChin)
-
-dim(SJSteelCM2)
-dim(SJSteelCM1)
-dim(SJSteelBT)
-dim(SourceSJSteel)
-# No steel remaining, so anything dropped from the source are for constraints on cleaning
-# Check for chin just in case?
-
-which(SJChinRem$Tag_ID_1 %in% SJBiomTable$Signal)
-
-# Yeah no, what's missing here is missing. Let's staple these together
-
-
-SJChin <- rbind(SJChinBT, SJChinCM1, SJChinCM2)
-SJSteel <- rbind(SJSteelBT, SJSteelCM1, SJSteelCM2)
+# 
+# unique(SJChin$Tag_ser_num[which(! (SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr))])
+# unique(SJSteel$Tag_ser_num[which(! (SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr))])
+# 
+# SJChinBT <- SJChin[which(SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr),]
+# SJSteelBT <- SJSteel[which(SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr),]
+# 
+# SJChinCheck <- SJChin[-which(SJChin$Tag_ser_num %in% SJBiomTable$Serial.nr),]
+# SJSteelCheck <- SJSteel[-which(SJSteel$Tag_ser_num %in% SJBiomTable$Serial.nr),]
+# 
+# which(SJSteelCheck$Tag_ser_num %in% SJBiomTable$Serial.nr)
+# which(SJChinCheck$Tag_ser_num %in% SJBiomTable$Serial.nr)
+# 
+# which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal)
+# which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal)
+# # Sweet, let's try a cross-walk?
+# table(SJBarrierTable[which((SJBarrierTable$Signal %% 2) == 1),"Species"])
+# # Try sweeping by going down by one val on odds and then going up by one on evens? First dupe Tag_ID_2 to 1.
+# which(which(is.na(SJChinCheck$Tag_ID_1)) %in% which(is.na(SJChinCheck$Tag_ID_2)))
+# 
+# for(i in 1:nrow(SJChinCheck)){
+#   if(is.na(SJChinCheck$Tag_ID_1[i])){
+#     SJChinCheck$Tag_ID_1[i] <- SJChinCheck$Tag_ID_2[i]
+#   }
+# }
+# dim(SJChinCheck)
+# ChinCheckSigs <- na.omit(unique(SJChinCheck$Tag_ID_1))
+# ChinCheckSigsNMod2 <- ChinCheckSigs[which(as.logical(as.numeric(ChinCheckSigs) %% 2))]
+# SJChinCheck
+# for(i in 1:length(ChinCheckSigsNMod2)){
+#   SCCross <- as.numeric(ChinCheckSigsNMod2[i])
+#   SCCrossP <- SCCross-1
+#   InDex <- c(which(SJChinCheck$Tag_ID_2 %in% SCCross), which(SJChinCheck$Tag_ID_1 %in% SCCross))
+#   SJChinCheck$Tag_ID_1[InDex] <- SCCrossP
+# }
+# 
+# dim(SJChinCheck)
+# 
+# SteelCheckSigs <- na.omit(unique(SJSteelCheck$Tag_ID))
+# SteelCheckSigsNMod2 <- SteelCheckSigs[which(as.logical(as.numeric(SteelCheckSigs) %% 2))]
+# #SJSteelCheck
+# #SteelCheckSigsNMod2
+# 
+# 
+# for(i in 1:length(SteelCheckSigsNMod2)){
+#   SCCross <- as.numeric(SteelCheckSigsNMod2[i])
+#   SCCrossP <- SCCross-1
+#   InDex <- which(SJSteelCheck$Tag_ID %in% SCCross)
+#   
+#   SJSteelCheck$Tag_ID[InDex] <- SCCrossP
+# }
+# dim(SJSteelCheck)
+# for(i in 1:nrow(SJBarrierTable)){
+#   ChinDex <- which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal[i])
+#   SteelDex <- which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal[i])
+#   if(length(ChinDex > 0)){
+#     if(SJBarrierTable$Barrier_status[i] %in% "Present"){
+#       if(SJBarrierTable$Pathway[i] %in% c("mid")){
+#         next
+#       } else {
+#         SJChinCheck <- SJChinCheck[-ChinDex,]
+#       }
+#     } else {
+#       SJChinCheck <- SJChinCheck[-ChinDex,]
+#     }
+#   }
+#   if(length(SteelDex > 0)){
+#     if(SJBarrierTable$Barrier_status[i] %in% "Present"){
+#       if(SJBarrierTable$Pathway[i] %in% c("mid")){
+#         next
+#       } else {
+#         SJSteelCheck <- SJSteelCheck[-SteelDex,]
+#       }
+#     } else {
+#       SJSteelCheck <- SJSteelCheck[-SteelDex,]
+#     }
+#   }
+# }
+# SJChinCM2 <- SJChinCheck[which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal),]
+# SJSteelCM2 <- SJSteelCheck[which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal),]
+# dim(SJChinCheck)
+# dim(SJSteelCheck)
+# dim(SJChinCM2)
+# dim(SJSteelCM2)
+# # Now remove the ones we just saved and repeat for mod 1
+# SJChinCheck <- SJChinCheck[-which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal),]
+# SJSteelCheck <- SJSteelCheck[-which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal),]
+# dim(SJChinCheck)
+# dim(SJSteelCheck)
+# ChinCheckSigs <- na.omit(unique(SJChinCheck$Tag_ID_1))
+# # Remember, only Mod2 remain now
+# for(i in 1:length(ChinCheckSigs)){
+#   SCCross <- as.numeric(ChinCheckSigs[i])
+#   SCCrossP <- SCCross+1
+#   InDex <- which(SJChinCheck$Tag_ID_1 %in% SCCross)
+#   SJChinCheck$Tag_ID_1[InDex] <- SCCrossP
+# }
+# any(is.na(SJChinCheck$Tag_ID_1))
+# 
+# SteelCheckSigs <- na.omit(unique(SJSteelCheck$Tag_ID))
+# for(i in 1:length(SteelCheckSigs)){
+#   SCCross <- as.numeric(SteelCheckSigs[i])
+#   SCCrossP <- SCCross+1
+#   InDex <- which(SJSteelCheck$Tag_ID %in% SCCross)
+#   
+#   SJSteelCheck$Tag_ID[InDex] <- SCCrossP
+# }
+# 
+# for(i in 1:nrow(SJBarrierTable)){
+#   ChinDex <- which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal[i])
+#   SteelDex <- which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal[i])
+#   if(length(ChinDex > 0)){
+#     if(SJBarrierTable$Barrier_status[i] %in% "Present"){
+#       if(SJBarrierTable$Pathway[i] %in% c( "mid")){
+#         next
+#       } else {
+#         SJChinCheck <- SJChinCheck[-ChinDex,]
+#       }
+#     } else {
+#       SJChinCheck <- SJChinCheck[-ChinDex,]
+#     }
+#   }
+#   if(length(SteelDex > 0)){
+#     if(SJBarrierTable$Barrier_status[i] %in% "Present"){
+#       if(SJBarrierTable$Pathway[i] %in% c("mid")){
+#         next
+#       } else {
+#         SJSteelCheck <- SJSteelCheck[-SteelDex,]
+#       }
+#     } else {
+#       SJSteelCheck <- SJSteelCheck[-SteelDex,]
+#     }
+#   }
+# }
+# SJChinCM1 <- SJChinCheck[which(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal),]
+# SJSteelCM1 <- SJSteelCheck[which(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal),]
+# 
+# SJChinRem <- SJChinCheck[which(!(SJChinCheck$Tag_ID_1 %in% SJBarrierTable$Signal)),]
+# SJSteelRem <- SJSteelCheck[which(!(SJSteelCheck$Tag_ID %in% SJBarrierTable$Signal)),]
+# 
+# RemChin <- unique(SJChinCheck$Tag_ID_1)[which(!(unique(SJChinCheck$Tag_ID_1) %in% SJBarrierTable$Signal))]
+# RemSteel <- unique(SJSteelCheck$Tag_ID)[which(!(unique(SJSteelCheck$Tag_ID) %in% SJBarrierTable$Signal))]
+# RemChin
+# RemSteel
+# 
+# dim(SJChinCM2)
+# dim(SJChinCM1)
+# dim(SJChinBT)
+# dim(SourceSJChin)
+# 
+# dim(SJSteelCM2)
+# dim(SJSteelCM1)
+# dim(SJSteelBT)
+# dim(SourceSJSteel)
+# # No steel remaining, so anything dropped from the source are for constraints on cleaning
+# # Check for chin just in case?
+# 
+# which(SJChinRem$Tag_ID_1 %in% SJBiomTable$Signal)
+# 
+# # Yeah no, what's missing here is missing. Let's staple these together
+# 
+# 
+# SJChin <- rbind(SJChinBT, SJChinCM1, SJChinCM2)
+# SJSteel <- rbind(SJSteelBT, SJSteelCM1, SJSteelCM2)
 
 SJChinSers <- unique(SJChin$Tag_ser_num)
 SJSteelSers <- unique(SJSteel$Tag_ser_num)
@@ -343,7 +333,7 @@ SJCFish<-vector(mode = "list", length = length(SJCRels))
 names(SJCFish) <- SJCRels
 for(i in 1:length(SJCRels)){
   KeySet <- which(SJChinFish[,1] == SJCRels[i])
-  print(KeySet)
+  #print(KeySet)
   SJCFish[[i]] <- unique(SJChinFish[KeySet,2])
 }
 
@@ -370,7 +360,7 @@ for(i in 1:length(SJSFish)){
 
 SJCRSMat
 SJSRSMat
-which(SJCRSMat[,2] > 7)
+which(as.numeric(SJCRSMat[,2]) > 7)
 # We still end up with 51 of the chinook releases if we use 8 as the cutoff. So we're using 8 as the cutoff, probably.
 table(SJCRSMat[,2])[order(as.numeric(names(table(SJCRSMat[,2]))))]
 table(SJSRSMat[,2])[order(as.numeric(names(table(SJSRSMat[,2]))))]
@@ -422,7 +412,7 @@ for(i in 1:length(SJSRels)){
   #print(SubFrame$FishID)
   #print(SubFrame$FirstDet)
   # # # # # # #NEED TO GET NEW BREAKPOINTS
-  if(i < 205){
+  if(i < 292){
     psxformat <- "%Y-%m-%d %H:%M:%OS" 
     RelT <- as.numeric(as.POSIXct(SJSRels[i], format = psxformat))
   } else {
@@ -503,14 +493,14 @@ for(i in 1:length(SJSRels)){
 
 
 # Writing out detections & pairs to be used for synchrony testing on the cluster
-if(!dir.exists("./Data/SJReduced")){
-  dir.create("./Data/SJReduced")
+if(!dir.exists("./Data/SJReduced1")){
+  dir.create("./Data/SJReduced1")
 }
-if(!dir.exists("./Data/SJReduced/Dets")){
-  dir.create("./Data/SJReduced/Dets")
+if(!dir.exists("./Data/SJReduced1/Dets")){
+  dir.create("./Data/SJReduced1/Dets")
 }
-if(!dir.exists("./Data/SJReduced/Pairs")){
-  dir.create("./Data/SJReduced/Pairs")
+if(!dir.exists("./Data/SJReduced1/Pairs")){
+  dir.create("./Data/SJReduced1/Pairs")
 }
 
 AllDets<-vector(mode = "list", length = length(SJCPairs) + length(SJSPairs))
@@ -527,8 +517,8 @@ for(i in 1:length(SJSPairs)){
 }
 
 for(i in 1:length(AllDets)){
-  write.csv(AllPairs[[i]], file = paste0("./Data/SJReduced/Pairs/", i, ".csv"), row.names=FALSE)
-  write.csv(AllDets[[i]], file = paste0("./Data/SJReduced/Dets/", i, ".csv"), row.names=FALSE)
+  write.csv(AllPairs[[i]], file = paste0("./Data/SJReduced1/Pairs/", i, ".csv"), row.names=FALSE)
+  write.csv(AllDets[[i]], file = paste0("./Data/SJReduced1/Dets/", i, ".csv"), row.names=FALSE)
 }
 
 
@@ -941,10 +931,10 @@ for(i in 1:length(SJSPopSig)){
 
 
 for(i in 1:length(SJCPopSig)){
-  print(i)
+  #print(i)
   PopSigTemp <- SJCPopSig[[i]]
   if(length(PopSigTemp) == 0){
-    print(i)
+    #print(i)
     next
   }
   SJCPopMat[i,1] <- 1/PopSigTemp[[1]][1,1]
@@ -966,7 +956,10 @@ for(i in 1:length(SJCPopSig)){
   SJCPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
 }
 
-CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/All_year_size_summary.csv")
+#CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/All_year_size_summary.csv")
+CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/CHN_corrected_sizes_2012-2015.csv")
+
+CorrSJBiomTable<-CorrSJBiomTable[!duplicated(CorrSJBiomTable),]
 #CorrSJChin <- CorrSJBiomTable[which(CorrSJBiomTable$Group %in% "CHN"),]
 #CorrSJChinSub <- CorrSJChin[which(CorrSJChin$Fish.Length < 85),]
 
@@ -983,12 +976,15 @@ for(i in 1:length(ClustBioms)){
   ClustBiomTable <- matrix(data = NA, nrow = length(Fish), ncol = 3)
   #print(Fish)
   colnames(ClustBiomTable) <- c("Fish", "Length", "Weight")
+  #print(i)
   for(j in 1:length(Fish)){
     #print(j)
     ClustBiomTable[j,1] <- Fish[j]
     #print(Fish[j])
     # Now we if/else chain for l/w.
     FishBiomKey <- which(CorrSJBiomTable$Serial.nr %in% Fish[j])
+    #print(FishBiomKey)
+    #print(Fish[j])
     # Need a good way to do some clever setting of FishSignal as a value
     # if(ClusterRunVec[i] < 143) {
     #    FishSignalTemp <- 
@@ -1000,10 +996,7 @@ for(i in 1:length(ClustBioms)){
     if(length(FishBiomKey) > 0){
       ClustBiomTable[j,2] <- CorrSJBiomTable$Fish.Length[FishBiomKey]
       ClustBiomTable[j,3] <- CorrSJBiomTable$Fish.Weight[FishBiomKey]
-    } else if (length(FishBarrierKey) > 0){
-      ClustBiomTable[j,2] <- SJBarrierTable$Length[FishBarrierKey]
-      ClustBiomTable[j,3] <- SJBarrierTable$Weight[FishBarrierKey]
-    }
+    } 
   }
   ClustBioms[[i]] <- ClustBiomTable
 }
@@ -1069,9 +1062,11 @@ nrow(SJSPopMat)
 
 # LOOK AT AND FOR NA's'
 # # #
-SJCPopMat<- na.omit(SJCPopMat)
-SJSPopMat<- na.omit(SJSPopMat)
-
+# SJCPopMat<- na.omit(SJCPopMat)
+# SJSPopMat<- na.omit(SJSPopMat)
+# Temporarily dropping NA's solely based on synchrony outputs due to issues with biom file
+SJCPopMat<-SJCPopMat[!is.na(SJCPopMat[,10]),]
+SJSPopMat<-SJSPopMat[!is.na(SJSPopMat[,10]),]
 nrow(SJCPopMat)
 nrow(SJSPopMat)
 
@@ -1254,15 +1249,11 @@ SJSModSub<-SJSPopMat[which(((SJSPopMat[,4] > .1) | (SJSPopMat[,5] > .1)) | (SJSP
 
 SJCModSub<-SJCPopMat[which(((SJCPopMat[,4] > .1) | (SJCPopMat[,5] > .1)) | (SJCPopMat[,6] > .1)),]
 
-SJCPopMat <- cbind(SJCPopMat, as.POSIXct(rownames(SJCPopMat)))
-
-SJSPopMat <- cbind(SJSPopMat, c(as.POSIXct(rownames(SJSPopMat)[1:72]), as.POSIXct(rownames(SJSPopMat)[73:92], format = "%m/%d/%Y %H:%M")))
-
 SJSPopRels<-rownames(SJSPopMat)
 SJCPopRels<-rownames(SJCPopMat)
-
 SJCDates<-vector(mode = "character", length = length(SJCPopRels))
 SJSDates<-vector(mode = "character", length = length(SJSPopRels))
+SJSHM<-vector(mode = "character", length = length(SJSPopRels))
 for(i in 1:length(SJCDates)){
   Day<-strsplit(SJCPopRels[i], split = "T", fixed = T)[[1]][1]
   DaySplit <- strsplit(Day, split = "-", fixed = T)[[1]]
@@ -1270,15 +1261,29 @@ for(i in 1:length(SJCDates)){
 }
 for(i in 1:length(SJSDates)){
   Day<-strsplit(SJSPopRels[i], split = " ", fixed = T)[[1]][1]
-  if(i < 73){
+  if(i < 79){
     DaySplit <- strsplit(Day, split = "-", fixed = T)[[1]]
     SJSDates[i] <- paste(as.numeric(DaySplit[2]), as.numeric(DaySplit[3]), DaySplit[1], sep = "/")
   } else {
     DaySplit <- strsplit(Day, split = "/", fixed = T)[[1]]
     #print(DaySplit[1])
     SJSDates[i] <- paste(as.numeric(DaySplit[1]), as.numeric(DaySplit[2]), paste0(20, DaySplit[3]), sep = "/")
+    SJSHM[i] <- strsplit(SJSPopRels[i], split = " ", fixed = T)[[1]][2]
   }
 }
+
+
+SJCPopMat <- cbind(SJCPopMat, as.POSIXct(rownames(SJCPopMat)))
+
+SJSPopMat <- cbind(SJSPopMat, c(as.POSIXct(rownames(SJSPopMat)[1:78]), as.POSIXct(paste(SJSDates[79:97], SJSHM[79:97],sep = " "), format = "%m/%d/%Y %H:%M")))
+colnames(SJCPopMat)[17] <- "POSIXct"
+colnames(SJSPopMat)[17] <- "POSIXct"
+# Switching this over to a new system to make this work easier
+
+
+SJFlowsRAW <- read.csv("/Users/nathanielcoombs/Downloads/SanJoaquinDelta_Dayflow_1996_2020.csv")
+SJFlows <- SJFlowsRAW[,c(3,9)]
+
 SJSFlows <- vector(length = length(SJSDates))
 SJCFlows <- vector(length = length(SJCDates))
 for(i in 1:length(SJSFlows)){
@@ -1295,8 +1300,6 @@ for(i in 1:length(SJCFlows)){
 }
 SJSPopMat<-cbind(SJSPopMat,SJSFlows)
 SJCPopMat<-cbind(SJCPopMat,SJCFlows)
-SJFlowsRAW <- read.csv("/Users/nathanielcoombs/Downloads/SanJoaquinDelta_Dayflow_1996_2020.csv")
-SJFlows <- SJFlowsRAW[,c(3,9)]
 
 
 #####
@@ -1463,17 +1466,23 @@ dev.off()
 pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJClustVsFlows.pdf")
 plot(x = SJCPopMat[,18], SJCPopMat[,10], main = "Chin - Euc sig vs flow", ylim = c(0,1))
 abline(h = .05, col = "Red")
+
 plot(x = SJCPopMat[,18], SJCPopMat[,11], main = "Chin - Phase sig vs flow", ylim = c(0,1))
 abline(h = .05, col = "Red")
+
 plot(x = SJCPopMat[,18], SJCPopMat[,12], main = "Chin - Step sig vs flow", ylim = c(0,1))
 abline(h = .05, col = "Red")
 
+
 plot(x = SJSPopMat[,18], SJSPopMat[,10], main = "Steel - Euc sig vs flow", ylim = c(0,1))
 abline(h = .05, col = "Red")
+
 plot(x = SJSPopMat[,18], SJSPopMat[,11], main = "Steel - Phase sig vs flow", ylim = c(0,1))
 abline(h = .05, col = "Red")
+
 plot(x = SJSPopMat[,18], SJSPopMat[,12], main = "Steel - Step sig vs flow", ylim = c(0,1))
 abline(h = .05, col = "Red")
+
 
 dev.off()
 
@@ -1494,7 +1503,139 @@ print(summary(SFlowLog))
 print(summary(CFlowLog))
 # Let's try beta Reg
 library("betareg")
-SFlowBet = betareg(SigLog ~ SJSFlows, data = as.data.frame(SJSPopMat))
+SFlowBet = betareg(PModLD ~ SJSFlows, data = as.data.frame(SJSPopMat))
 
 CFlowBet = betareg(formula = PModLD ~ SJCFlows, data = as.data.frame(SJCPopMat))
+
+print(summary(SFlowBet))
+print(summary(CFlowBet))
 # Let's do a quick t test on our splits for biometrics vs clustering
+library(fitdistrplus)
+library(MASS)
+FlowMin <- min(c(SJCPopMat[,18],SJSPopMat[,18]))
+FlowMax <- max(c(SJCPopMat[,18],SJSPopMat[,18]))
+FlowBreaks <- seq(FlowMin, FlowMax, length.out = 6)
+hist(SJCPopMat[,18], breaks = FlowBreaks)
+hist(SJSPopMat[,18], breaks = FlowBreaks)
+
+binom.test(3,51,.05, alternative = "greater")
+binom.test(3,97,.05, alternative = "greater")
+
+hist(SJCPopMat[,18], breaks = FlowBreaks)
+hist(SJSPopMat[,18], breaks = FlowBreaks)
+
+length(which(SJSPopMat[,7] < .05))
+
+hist(SJCPopMat[,10], breaks = 20)
+hist(SJSPopMat[,10], breaks = 20)
+
+# # # Section for looking at old version of results
+OutFileSetPrev <- list.files("/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Data/SJReduced/Outputs/Pops/")
+OutSetPrev <- vector(mode = "character", length = length(OutFileSetPrev))
+for(i in 1:length(OutFileSetPrev)){
+  OutSetPrev[i] <- strsplit(OutFileSetPrev[i], ".", fixed = T)[[1]][1]
+}
+
+PrevAllPopSig<-vector(mode = "list", length = length(OutSetPrev))
+PrevAllPairSig<-vector(mode = "list", length = length(OutSetPrev))
+
+SJCErr<-vector(mode = "numeric")
+for(i in 1:length(PrevAllPopSig)){
+  PrevAllPopSig[[i]] <- readRDS(paste("/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Data/SJReduced/Outputs/Pops/", OutSetPrev[i], ".rds", sep = ""))
+  PrevAllPairSig[[i]] <- read.csv(paste("/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Data/SJReduced/Outputs/Pairs/", OutSetPrev[i], ".csv", sep = ""))
+}
+
+length(PrevAllPopSig)
+
+PrevAllPairSig[[151]][,4:5]
+# 151 is the breakpoint
+PrevSJCPopSig <- vector(mode = "list", length = 151)
+PrevSJSPopSig <- vector(mode = "list", length = length(PrevAllPopSig) - 151)
+for(i in 1:length(PrevAllPopSig)){
+  if(i < 152){
+    PrevSJCPopSig[[i]] <- PrevAllPopSig[[i]]
+  } else {
+    PrevSJSPopSig[[i - 151]] <- PrevAllPopSig[[i]]
+  }
+}
+PrevSJSPopMat <- matrix(data = NA, nrow = length(PrevSJSPopSig), ncol = 12)
+colnames(PrevSJSPopMat) <- c("MeanLD", "MeanPS", "MeanLS", "ModLD", "ModPS", "ModLS", "PMeanLD", "PMeanPS", "PMeanLS", "PModLD", "PModPS", "PModLS")
+
+PrevSJCPopMat <- matrix(data = NA, nrow = length(PrevSJCPopSig), ncol = 12)
+colnames(PrevSJCPopMat) <- c("MeanLD", "MeanPS", "MeanLS", "ModLD", "ModPS", "ModLS", "PMeanLD", "PMeanPS", "PMeanLS", "PModLD", "PModPS", "PModLS")
+
+
+# # # Try refreshing the data and checking for NA's
+
+for(i in 1:length(PrevSJSPopSig)){
+  #print(i)
+  PopSigTemp <- PrevSJSPopSig[[i]]
+  if(length(PopSigTemp) == 0){
+    next
+  }
+  PrevSJSPopMat[i,1] <- 1/PopSigTemp[[1]][1,1]
+  PrevSJSPopMat[i,2] <- 1/PopSigTemp[[1]][1,2]
+  PrevSJSPopMat[i,3] <- 1/PopSigTemp[[1]][1,3]
+  
+  PrevSJSPopMat[i,4] <- PopSigTemp[[1]][2,1]
+  PrevSJSPopMat[i,5] <- PopSigTemp[[1]][2,2]
+  PrevSJSPopMat[i,6] <- PopSigTemp[[1]][2,3]
+  
+  
+  
+  PrevSJSPopMat[i,7] <- PopSigTemp[[2]][1,1]/1000
+  PrevSJSPopMat[i,8] <- PopSigTemp[[2]][1,2]/1000
+  PrevSJSPopMat[i,9] <- PopSigTemp[[2]][1,3]/1000
+  
+  PrevSJSPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/1000)
+  PrevSJSPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/1000)
+  PrevSJSPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
+}
+
+
+for(i in 1:length(PrevSJCPopSig)){
+  #print(i)
+  PopSigTemp <- PrevSJCPopSig[[i]]
+  if(length(PopSigTemp) == 0){
+    #print(i)
+    next
+  }
+  PrevSJCPopMat[i,1] <- 1/PopSigTemp[[1]][1,1]
+  PrevSJCPopMat[i,2] <- 1/PopSigTemp[[1]][1,2]
+  PrevSJCPopMat[i,3] <- 1/PopSigTemp[[1]][1,3]
+  
+  PrevSJCPopMat[i,4] <- PopSigTemp[[1]][2,1]
+  PrevSJCPopMat[i,5] <- PopSigTemp[[1]][2,2]
+  PrevSJCPopMat[i,6] <- PopSigTemp[[1]][2,3]
+  
+  
+  
+  PrevSJCPopMat[i,7] <- PopSigTemp[[2]][1,1]/1000
+  PrevSJCPopMat[i,8] <- PopSigTemp[[2]][1,2]/1000
+  PrevSJCPopMat[i,9] <- PopSigTemp[[2]][1,3]/1000
+  
+  PrevSJCPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/1000)
+  PrevSJCPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/1000)
+  PrevSJCPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
+}
+PrevSJCPopMat<-na.omit(PrevSJCPopMat)
+PrevSJSPopMat<-na.omit(PrevSJSPopMat)
+
+nrow(PrevSJCPopMat)
+nrow(PrevSJSPopMat)
+length(which(PrevSJCPopMat[,10] < .05))
+length(which(PrevSJSPopMat[,10] < .05))
+binom.test(14,151,.05, alternative = "greater")
+binom.test(72,433,.05, alternative = "greater")
+
+hist(PrevSJCPopMat[,10], 20)
+hist(PrevSJSPopMat[,10], 20)
+# DropPairSig<-vector(mode = "numeric")
+# for(i in 1:length(PrevAllPairSig)){
+#   Temp<-PrevAllPairSig[[i]]
+#   if(length(unique(Temp[,4])) < 4){
+#     DropPairSig<-c(DropPairSig,i)
+#   }
+# }
+# DropPairSig
+# DropPairSig<-
