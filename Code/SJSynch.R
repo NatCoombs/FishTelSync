@@ -529,7 +529,8 @@ saveRDS(SJSPairs,"Data/SJSPairs.rds")
 # And now we need to print out which indices to run on the cluster and get that going, but we're very close now!
 SJCRS<-as.numeric(SJCRSMat[,2])
 SJSRS<-as.numeric(SJSRSMat[,2])
-ClusterRunVec <- c(which(SJCRS > 7), 143 + which(SJSRS > 7)) 
+ClusterRunVec <- c(which(SJCRS > 7), 232 + which(SJSRS > 7)) 
+CompRunVec <- c(which(SJCRS > 5), 232 + which(SJSRS > 5)) 
 cat("[", paste(ClusterRunVec, collapse = ","), "]", sep = "")
 
 SJCDebug<-function(Release, Run){
@@ -847,10 +848,13 @@ for(i in 1:length(OutFileSet)){
 }
 
 
-cat(paste0(which(!(1:385 %in% OutSet)),collapse = ","))
+cat(paste0(which(!(1:638 %in% OutSet)),collapse = ","))
 
+which(!(1:638 %in% OutSet))
+length(which(which(!(1:638 %in% OutSet)) %in% ClusterRunVec))
 
-
+# Check why these didn't go through
+which(!(1:638 %in% OutSet))[which(which(!(1:638 %in% OutSet)) %in% ClusterRunVec)]
 
 SJCRS
 #<-as.numeric(SJCRSMat[,2])
@@ -871,7 +875,7 @@ SJCPopSig<-vector(mode = "list", length = length(which(SJCRS > 7)))
 names(SJCPopSig) <- SJCRSMat[which(SJCRS > 7),1]
 
 #<-as.numeric(SJSRSMat[,2])
-ClusterRunVec <- c(which(SJCRS > 7), 143 + which(SJSRS > 7)) 
+ClusterRunVec <- c(which(SJCRS > 7), 232 + which(SJSRS > 7)) 
 ClusterRunRels <- c(SJCRSMat[which(SJCRS > 7),1], SJSRSMat[which(SJSRS > 7),1]) 
 
 # # # Try refreshing the data and checking for NA's
@@ -881,7 +885,7 @@ for(i in 1:length(ClusterRunVec)){
   if(!(ClusterRunVec[i] %in% as.numeric(OutSet))){
     next
   }
-  if(ClusterRunVec[i] < 143){
+  if(ClusterRunVec[i] < 233){
   SJCPopSig[[i]] <- readRDS(paste("/Users/nathanielcoombs/Desktop/Cluster_folders/SjSurrogCluster/Outputs/Pops/", ClusterRunVec[i], ".rds", sep = ""))
   SJCPairSig[[i]] <- read.csv(paste("/Users/nathanielcoombs/Desktop/Cluster_folders/SjSurrogCluster/Outputs/Pairs/", ClusterRunVec[i], ".csv", sep = ""))
   a<-i
@@ -905,7 +909,7 @@ rownames(SJSPopMat) <- names(SJSPopSig)
 # # # Try refreshing the data and checking for NA's
 
 for(i in 1:length(SJSPopSig)){
-  print(i)
+  #print(i)
   PopSigTemp <- SJSPopSig[[i]]
   if(length(PopSigTemp) == 0){
     next
@@ -920,13 +924,13 @@ for(i in 1:length(SJSPopSig)){
   
   
   
-  SJSPopMat[i,7] <- PopSigTemp[[2]][1,1]/1000
-  SJSPopMat[i,8] <- PopSigTemp[[2]][1,2]/1000
-  SJSPopMat[i,9] <- PopSigTemp[[2]][1,3]/1000
+  SJSPopMat[i,7] <- PopSigTemp[[2]][1,1]/100
+  SJSPopMat[i,8] <- PopSigTemp[[2]][1,2]/100
+  SJSPopMat[i,9] <- PopSigTemp[[2]][1,3]/100
   
-  SJSPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/1000)
-  SJSPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/1000)
-  SJSPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
+  SJSPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/100)
+  SJSPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/100)
+  SJSPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/100)
 }
 
 
@@ -947,17 +951,38 @@ for(i in 1:length(SJCPopSig)){
   
   
   
-  SJCPopMat[i,7] <- PopSigTemp[[2]][1,1]/1000
-  SJCPopMat[i,8] <- PopSigTemp[[2]][1,2]/1000
-  SJCPopMat[i,9] <- PopSigTemp[[2]][1,3]/1000
+  SJCPopMat[i,7] <- PopSigTemp[[2]][1,1]/100
+  SJCPopMat[i,8] <- PopSigTemp[[2]][1,2]/100
+  SJCPopMat[i,9] <- PopSigTemp[[2]][1,3]/100
   
-  SJCPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/1000)
-  SJCPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/1000)
-  SJCPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
+  SJCPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/100)
+  SJCPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/100)
+  SJCPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/100)
 }
 
 #CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/All_year_size_summary.csv")
-CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/CHN_corrected_sizes_2012-2015.csv")
+CorrSJBiomTable<-read.csv("/Users/nathanielcoombs/Downloads/All_year_size_summary (2).csv")
+CorrSJChinTable<-read.csv("/Users/nathanielcoombs/Downloads/CHN_corrected_sizes_2012-2015.csv")
+
+CorrSJChinTable<-CorrSJChinTable[!duplicated(CorrSJChinTable),]
+CorrSJBiomTable<-CorrSJBiomTable[!duplicated(CorrSJBiomTable),]
+InCorrChinVec<-which(CorrSJBiomTable$Group == "CHN")
+for(i in InCorrChinVec){
+  Repdex<- which(CorrSJChinTable$Serial.nr == CorrSJBiomTable$Serial.nr[i])
+  CorrSJBiomTable[i,5] <- CorrSJChinTable[Repdex,2]
+  CorrSJBiomTable[i,6] <- CorrSJChinTable[Repdex,3]
+}
+
+RawSJS16<-read.csv("/Users/nathanielcoombs/Downloads/2016_Steelhead_Tagging_Info.csv")
+RawSJC16<-read.csv("/Users/nathanielcoombs/Downloads/2016_Chinook_Tagging_Info.csv")
+
+SJC16Sub<-cbind(RawSJC16[,c(52,37,14,15,22,20)],"CHN", NA)
+colnames(SJC16Sub) <- colnames(CorrSJBiomTable)
+
+SJS16Sub<-cbind(RawSJS16[,c(65,90,13,14,21,20)],"STL", NA)
+colnames(SJS16Sub) <- colnames(CorrSJBiomTable)
+
+CorrSJBiomTable <- rbind(CorrSJBiomTable,SJS16Sub,SJC16Sub)
 
 CorrSJBiomTable<-CorrSJBiomTable[!duplicated(CorrSJBiomTable),]
 #CorrSJChin <- CorrSJBiomTable[which(CorrSJBiomTable$Group %in% "CHN"),]
@@ -968,10 +993,10 @@ ClustBioms<-vector(mode = "list", length(ClusterRunRels))
 names(ClustBioms) <- ClusterRunRels
 for(i in 1:length(ClustBioms)){
 
-  if(ClusterRunVec[i] < 143){
+  if(ClusterRunVec[i] < 233){
     Fish <- SJCFish[[ClusterRunVec[i]]]
   } else {
-    Fish <- SJSFish[[ClusterRunVec[i] - 143]]
+    Fish <- SJSFish[[ClusterRunVec[i] - 232]]
   }
   ClustBiomTable <- matrix(data = NA, nrow = length(Fish), ncol = 3)
   #print(Fish)
@@ -1031,7 +1056,7 @@ for(i in 1:length(ClusterRunVec)){
     Wvar <- NA
     
   }
-  if(ClusterRunVec[i] < 143){
+  if(ClusterRunVec[i] < 233){
     #print(i)
     SJCLMean <- c(SJCLMean, Lmean)
     SJCLVar <- c(SJCLVar, Lvar)
@@ -1261,7 +1286,7 @@ for(i in 1:length(SJCDates)){
 }
 for(i in 1:length(SJSDates)){
   Day<-strsplit(SJSPopRels[i], split = " ", fixed = T)[[1]][1]
-  if(i < 79){
+  if(i < 155){
     DaySplit <- strsplit(Day, split = "-", fixed = T)[[1]]
     SJSDates[i] <- paste(as.numeric(DaySplit[2]), as.numeric(DaySplit[3]), DaySplit[1], sep = "/")
   } else {
@@ -1275,7 +1300,7 @@ for(i in 1:length(SJSDates)){
 
 SJCPopMat <- cbind(SJCPopMat, as.POSIXct(rownames(SJCPopMat)))
 
-SJSPopMat <- cbind(SJSPopMat, c(as.POSIXct(rownames(SJSPopMat)[1:78]), as.POSIXct(paste(SJSDates[79:97], SJSHM[79:97],sep = " "), format = "%m/%d/%Y %H:%M")))
+SJSPopMat <- cbind(SJSPopMat, c(as.POSIXct(rownames(SJSPopMat)[1:154]), as.POSIXct(paste(SJSDates[155:248], SJSHM[155:248],sep = " "), format = "%m/%d/%Y %H:%M")))
 colnames(SJCPopMat)[17] <- "POSIXct"
 colnames(SJSPopMat)[17] <- "POSIXct"
 # Switching this over to a new system to make this work easier
@@ -1351,11 +1376,25 @@ dev.off()
 
 colnames(SJCPopMat)
 
-length(which(SJCPopMat[,12] < .05))
+length(which(SJCPopMat[,7] < .05))
 
-length(which(SJSPopMat[,12] < .05))
+length(which(SJSPopMat[,7] < .05))
 
+nrow(SJCPopMat)
 nrow(SJSPopMat)
+
+length(which(SJCPopMat[,10] < .05))
+
+length(which(SJSPopMat[,10] < .05))
+
+binom.test(2,120,.05, alternative = "greater")
+binom.test(3,248,.05, alternative = "greater")
+
+hist(SJCPopMat[,7], 20)
+hist(SJSPopMat[,7], 20)
+hist(SJCPopMat[,10], 20)
+hist(SJSPopMat[,10], 20)
+
 #####
 pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJClustVsBiom.pdf")
 par(mfrow = c(2,2))
@@ -1625,11 +1664,15 @@ nrow(PrevSJCPopMat)
 nrow(PrevSJSPopMat)
 length(which(PrevSJCPopMat[,10] < .05))
 length(which(PrevSJSPopMat[,10] < .05))
+
 binom.test(14,151,.05, alternative = "greater")
 binom.test(72,433,.05, alternative = "greater")
 
+hist(PrevSJCPopMat[,7], 20)
+hist(PrevSJSPopMat[,7], 20)
 hist(PrevSJCPopMat[,10], 20)
 hist(PrevSJSPopMat[,10], 20)
+
 # DropPairSig<-vector(mode = "numeric")
 # for(i in 1:length(PrevAllPairSig)){
 #   Temp<-PrevAllPairSig[[i]]
