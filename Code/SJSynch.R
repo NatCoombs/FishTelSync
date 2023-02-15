@@ -1387,13 +1387,13 @@ length(which(SJCPopMat[,10] < .05))
 
 length(which(SJSPopMat[,10] < .05))
 
-binom.test(2,120,.05, alternative = "greater")
-binom.test(3,248,.05, alternative = "greater")
+binom.test(6,120,.05, alternative = "greater")
+binom.test(15,248,.05, alternative = "greater")
 
-hist(SJCPopMat[,7], 20)
-hist(SJSPopMat[,7], 20)
-hist(SJCPopMat[,10], 20)
-hist(SJSPopMat[,10], 20)
+hist(SJCPopMat[,7], 20, main = "Chinook mean p-values")
+hist(SJSPopMat[,7], 20, main = "Steelhead mean p-values")
+hist(SJCPopMat[,10], 20, main = "Chinook cluster p-values")
+hist(SJSPopMat[,10], 20, main = "Steelhead cluster p-values")
 
 #####
 pdf(file = "/Users/nathanielcoombs/Documents/Git/Repos/FishTelPrac/Intermediate stuff/SJClustVsBiom.pdf")

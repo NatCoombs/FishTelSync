@@ -34,6 +34,7 @@ MarkovFishSurrogates<-function(MFTable, InitPos, InitTime, nFish, Reps,
         
         #print(match(LocVec[length(LocVec)], names(MFTable)))
         MFSub <- MFTable[[match(LocVec[length(LocVec)], names(MFTable))]]
+
         #cat("H ")
         #cat(LocVec[length(LocVec)], match(LocVec[length(LocVec)], names(MFTable)), "\n")
       

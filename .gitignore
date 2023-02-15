@@ -43,3 +43,6 @@ Data/SJSPairs.rds
 *.rds
 *.rds
 Data/SJCPairs.rds
+Results/SimPrelim.xlsx
+Results/~$SimPrelim.xlsx
+Data/SJCPairs.rds
