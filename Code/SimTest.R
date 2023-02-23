@@ -48,7 +48,7 @@ TestSimNeut<-function(nFish, nSites){
   return(df)
 }
 
-TestSimSpeed<-function(nFish, nSites, SplitAt, MeanDiff){
+TestSimSpeed<-function(nFish, nSites, SplitAt, SpeDiff){
   nSites<-nSites+1
   mat <- as.data.frame(matrix(data = NA, nrow = nFish*nSites, ncol = 5))
   mat[,1] <- rep(1:nFish, each = nSites)
@@ -96,7 +96,7 @@ TestSimSpeed<-function(nFish, nSites, SplitAt, MeanDiff){
       # Move
       SampSp <- -1
       while(SampSp < .5){
-        SampSp <- rnorm(1, mean = 3 + MeanDiff, sd = 1)
+        SampSp <- rnorm(1, mean = 3 * SpeDiff, sd = 1)
       }
       mat[(i-1)*nSites + j,3] <- 10/SampSp + mat[(i-1)*nSites + j-1,4]
       
@@ -125,7 +125,7 @@ TestSimSpeed<-function(nFish, nSites, SplitAt, MeanDiff){
   return(df)
 }
 
-TestSimHold<-function(nFish, nSites, SplitAt, HoldDiff){
+TestSimHold<-function(nFish, nSites, SplitAt, HolDiff){
   nSites<-nSites+1
   mat <- as.data.frame(matrix(data = NA, nrow = nFish*nSites, ncol = 5))
   mat[,1] <- rep(1:nFish, each = nSites)
@@ -173,16 +173,22 @@ TestSimHold<-function(nFish, nSites, SplitAt, HoldDiff){
       
       # Move
       SampSp <- -1
-      while(SampSp < .5){
+      if(j %in% 1:3){
+        while(SampSp < .5){
+          SampSp <- rnorm(1, mean = 3/HolDiff, sd = 1)
+        }
+      } else {
+        while(SampSp < .5){
         SampSp <- rnorm(1, mean = 3, sd = 1)
+        }
       }
       mat[(i-1)*nSites + j,3] <- 10/SampSp + mat[(i-1)*nSites + j-1,4]
       
       # Hold
       SampHo <- -1
       meanHo <- .2
-      if(j == 2){
-        meanHo = .2 + HoldDiff
+      if(j %in% 1:3){
+        meanHo = .2 * HolDiff
       }
      
       while(SampHo < .0000001){
@@ -208,44 +214,25 @@ TestSimHold<-function(nFish, nSites, SplitAt, HoldDiff){
   return(df)
 }
 
-ControlTable <- matrix(data = NA, nrow = 24, ncol = 5)
-ControlTable[,1] <- rep(c(10,30,100,300), each = 6)
-ControlTable[,2] <- rep(rep(c(10,20), each = 3), times = 4)
-# SCREWED UP SPLITAT SO FIX FOR NEXT RUN
-ControlTable[,3] <- rep(c(0,6,6), times = 8)
-ControlTable[,4] <- rep(c(0,3,0), times = 8)
-ControlTable[,5] <- rep(c(0,0,9.8), times = 8)
+ControlTable <- matrix(data = NA, nrow = 18, ncol = 5)
+ControlTable[,1] <- rep(c(10,30,50), each = 6)
+ControlTable[,2] <- rep(rep(c(10,20), each = 3), times = 3)
+ControlTable[,3] <- rep(c(6,16,26), each = 6)
+ControlTable[,4] <- rep(c(0,2,0), times = 6)
+ControlTable[,5] <- rep(c(0,0,3), times = 6)
+ControlTable<-rbind(ControlTable,ControlTable,ControlTable,ControlTable,ControlTable)
 # Three cases: Neutral synchrony, Holding synchrony, and Speed synchrony
-# SCREWED UP SPLITAT FIX BEFORE NEXT RUN
 set.seed(404)
-TestDets <- vector(mode = "list", length = 24)
-TestDets[[1]] <- TestSimNeut(10,10)
-TestDets[[2]] <- TestSimSpeed(10,10, 6, 3)
-TestDets[[3]] <- TestSimHold(10,10, 6, 9.8)
-TestDets[[4]] <- TestSimNeut(10,20)
-# SCREWED UP SPLITAT FIX BEFORE NEXT RUN!!!!!!!
-TestDets[[5]] <- TestSimSpeed(10,20, 6, 3)
-TestDets[[6]] <- TestSimHold(10,20, 6, 9.8)
-TestDets[[7]] <- TestSimNeut(30,10)
-TestDets[[8]] <- TestSimSpeed(30,10, 6, 3)
-TestDets[[9]] <- TestSimHold(30,10, 6, 9.8)
-TestDets[[10]] <- TestSimNeut(30,20)
-TestDets[[11]] <- TestSimSpeed(30,20, 6, 3)
-TestDets[[12]] <- TestSimHold(30,20, 6, 9.8)
-TestDets[[13]] <- TestSimNeut(100,10)
-TestDets[[14]] <- TestSimSpeed(100,10, 6, 3)
-TestDets[[15]] <- TestSimHold(100,10, 6, 9.8)
-TestDets[[16]] <- TestSimNeut(100,20)
-TestDets[[17]] <- TestSimSpeed(100,20, 6, 3)
-TestDets[[18]] <- TestSimHold(100,20, 6, 9.8)
-TestDets[[19]] <- TestSimNeut(300,10)
-TestDets[[20]] <- TestSimSpeed(300,10, 6, 3)
-TestDets[[21]] <- TestSimHold(300,10, 6, 9.8)
-TestDets[[22]] <- TestSimNeut(300,20)
-TestDets[[23]] <- TestSimSpeed(300,20, 6, 3)
-TestDets[[24]] <- TestSimHold(300,20, 6, 9.8)
-
-table(sort(as.numeric(TestDets[[24]][,1])))
+TestDets <- vector(mode = "list", length = nrow(ControlTable))
+for(i in 1:length(TestDets)){
+  if((i %% 3 == 1)){
+    TestDets[[i]] <- TestSimNeut(ControlTable[i,1],ControlTable[i,2])
+  } else   if((i %% 3 == 2)){
+    TestDets[[i]] <- TestSimSpeed(ControlTable[i,1],ControlTable[i,2],ControlTable[i,3],ControlTable[i,4])
+  } else   if((i %% 3 == 0)){
+    TestDets[[i]] <- TestSimHold(ControlTable[i,1],ControlTable[i,2],ControlTable[i,3],ControlTable[i,5])
+  }
+}
 
 TestPairsGen<-function(DetMat){
   FishVec <- as.character(unique(DetMat[,1]))
@@ -262,8 +249,8 @@ TestPairsGen<-function(DetMat){
   return(mat)
 }
 
-TestPairs <- vector(mode = "list", length = 24)
-for(i in 1:24){
+TestPairs <- vector(mode = "list", length = length(TestDets))
+for(i in 1:length(TestDets)){
   TestPairs[[i]] <- TestPairsGen(TestDets[[i]])
 }
 
@@ -321,18 +308,18 @@ for(i in 1:length(SimPopSig)){
   
   
   
-  SimPopMat[i,7] <- PopSigTemp[[2]][1,1]/100
-  SimPopMat[i,8] <- PopSigTemp[[2]][1,2]/100
-  SimPopMat[i,9] <- PopSigTemp[[2]][1,3]/100
+  SimPopMat[i,7] <- 1-PopSigTemp[[2]][1,1]/1000
+  SimPopMat[i,8] <- 1-PopSigTemp[[2]][1,2]/1000
+  SimPopMat[i,9] <- 1-PopSigTemp[[2]][1,3]/1000
   
-  SimPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/100)
-  SimPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/100)
-  SimPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/100)
+  SimPopMat[i,10] <- 1-(PopSigTemp[[2]][2,1]/1000)
+  SimPopMat[i,11] <- 1-(PopSigTemp[[2]][2,2]/1000)
+  SimPopMat[i,12] <- 1-(PopSigTemp[[2]][2,3]/1000)
 }
 
 SimPopMat[,13:17] <- ControlTable[as.numeric(OutSet),]
 
-SimPopMat<-SimPopMat[order(SimPopMat[,13],SimPopMat[,14],decreasing = F),]
+SimPopMat<-SimPopMat[order(SimPopMat[,16],SimPopMat[,17],SimPopMat[,13],SimPopMat[,14],decreasing = F),]
 
 write.csv(SimPopMat, "./Results/Sim.csv")
 
