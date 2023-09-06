@@ -41,7 +41,7 @@ MFPop <- function(RedSet, TruePairs, Surrs, Reps, Seed = 1){
     PairDex <- 1
     for(k in 1:(length(TFish)-1)){
       for(j in (k+1):length(TFish)){
-        ZCheck <- as.numeric(ClustTestSynch1[[PairDex]][[i*7]])
+        ZCheck <- as.numeric(RedSet[[PairDex]][[i*7]])
         if(ZCheck != 0){
           ZCheck <- 1/ZCheck
         }

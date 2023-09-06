@@ -46,3 +46,9 @@ Data/SJCPairs.rds
 Results/SimPrelim.xlsx
 Results/~$SimPrelim.xlsx
 Data/SJCPairs.rds
+.RDataTmp1
+*.rds
+*.qmd
+*.xlsx
+*.xls
+Data/SJCPairs.rds
